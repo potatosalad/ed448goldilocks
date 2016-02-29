@@ -15,6 +15,9 @@ extern "C" {
 /** Number of bytes in an EdDSA private key. */
 #define $(C_NS)_EDDSA_SIGNATURE_BYTES ($(C_NS)_EDDSA_PUBLIC_BYTES + $(C_NS)_EDDSA_PRIVATE_BYTES)
 
+/** Number of bytes in an EdDSA prehashed message. */
+#define $(C_NS)_EDDSA_PREHASH_BYTES 64
+
 /** Does EdDSA support contexts? */
 #define $(C_NS)_EDDSA_SUPPORTS_CONTEXTS $(eddsa_supports_contexts)
 

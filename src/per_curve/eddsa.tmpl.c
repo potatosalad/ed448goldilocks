@@ -117,7 +117,7 @@ void API_NS(eddsa_sign) (
     API_NS(scalar_t) secret_scalar;
     hash_ctx_t hash;
 
-    uint8_t prehashed_message[(prehashed ? 2*$(C_NS)_EDDSA_PRIVATE_BYTES : 0)];
+    uint8_t prehashed_message[(prehashed ? $(C_NS)_EDDSA_PREHASH_BYTES : 0)];
     /* Maybe prehash message */
     if (prehashed) {
         hash_init_with_dom(hash,prehashed,1,context,context_len);
@@ -228,7 +228,7 @@ decaf_error_t API_NS(eddsa_verify) (
     API_NS(scalar_t) challenge_scalar;
     {
         hash_ctx_t hash;
-        uint8_t prehashed_message[(prehashed ? 2*$(C_NS)_EDDSA_PRIVATE_BYTES : 0)];
+        uint8_t prehashed_message[(prehashed ? $(C_NS)_EDDSA_PREHASH_BYTES : 0)];
         /* Maybe prehash message */
         if (prehashed) {
             hash_init_with_dom(hash,prehashed,1,context,context_len);
