@@ -467,6 +467,7 @@ static void test_cfrg_crypto() {
 }
 
 static const Block eddsa_sk[], eddsa_pk[], eddsa_message[], eddsa_context[], eddsa_sig[];
+static const bool eddsa_prehashed[];
 
 static void test_cfrg_vectors() {
     Test test("CFRG test vectors");
@@ -491,9 +492,9 @@ static void test_cfrg_vectors() {
         }
         SecureBuffer sig;
         if (priv.SUPPORTS_CONTEXTS) {
-            sig = priv.sign(eddsa_message[t],false,eddsa_context[t]);
+            sig = priv.sign(eddsa_message[t],eddsa_prehashed[t],eddsa_context[t]);
         } else {
-            sig = priv.sign(eddsa_message[t]);
+            sig = priv.sign(eddsa_message[t],eddsa_prehashed[t]);
         }
 
         if (!memeq(SecureBuffer(eddsa_sig[t]),sig)) {

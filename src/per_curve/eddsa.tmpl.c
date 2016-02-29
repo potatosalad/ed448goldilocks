@@ -41,6 +41,7 @@ static void clamp(
 static void hash_init_with_dom(
     hash_ctx_t hash,
     uint8_t prehashed,
+    uint8_t internal,
     const uint8_t *context,
     uint8_t context_len
 ) {
@@ -48,12 +49,13 @@ static void hash_init_with_dom(
     
 #if SUPPORTS_CONTEXTS
     const char *domS = "$(eddsa_dom)";
-    const uint8_t dom[2] = {1+word_is_zero(prehashed), context_len};
+    const uint8_t dom[2] = {1+word_is_zero(prehashed)+1+word_is_zero(internal), context_len};
     hash_update(hash,(const unsigned char *)domS, strlen(domS));
     hash_update(hash,dom,2);
     hash_update(hash,context,context_len);
 #else
     (void)prehashed;
+    (void)internal;
     (void)context;
     assert(context==NULL);
     (void)context_len;
@@ -114,6 +116,17 @@ void API_NS(eddsa_sign) (
 #endif
     API_NS(scalar_t) secret_scalar;
     hash_ctx_t hash;
+
+    uint8_t prehashed_message[(prehashed ? 2*$(C_NS)_EDDSA_PRIVATE_BYTES : 0)];
+    /* Maybe prehash message */
+    if (prehashed) {
+        hash_init_with_dom(hash,prehashed,1,context,context_len);
+        hash_update(hash,message,message_len);
+        message_len = sizeof(prehashed_message);
+        hash_final(hash,prehashed_message,message_len);
+        message = (const uint8_t *)(prehashed_message);
+    }
+
     {
         /* Schedule the secret key */
         struct {
@@ -130,7 +143,7 @@ void API_NS(eddsa_sign) (
         API_NS(scalar_decode_long)(secret_scalar, expanded.secret_scalar_ser, sizeof(expanded.secret_scalar_ser));
     
         /* Hash to create the nonce */
-        hash_init_with_dom(hash,prehashed,context,context_len);
+        hash_init_with_dom(hash,prehashed,0,context,context_len);
         hash_update(hash,expanded.seed,sizeof(expanded.seed));
         hash_update(hash,message,message_len);
         decaf_bzero(&expanded, sizeof(expanded));
@@ -165,7 +178,7 @@ void API_NS(eddsa_sign) (
     API_NS(scalar_t) challenge_scalar;
     {
         /* Compute the challenge */
-        hash_init_with_dom(hash,prehashed,context,context_len);
+        hash_init_with_dom(hash,prehashed,0,context,context_len);
         hash_update(hash,nonce_point,sizeof(nonce_point));
         hash_update(hash,pubkey,$(C_NS)_EDDSA_PUBLIC_BYTES);
         hash_update(hash,message,message_len);
@@ -174,6 +187,7 @@ void API_NS(eddsa_sign) (
         hash_destroy(hash);
         API_NS(scalar_decode_long)(challenge_scalar,challenge,sizeof(challenge));
         decaf_bzero(challenge,sizeof(challenge));
+        decaf_bzero(prehashed_message,sizeof(prehashed_message));
     }
     
     API_NS(scalar_mul)(challenge_scalar,challenge_scalar,secret_scalar);
@@ -210,12 +224,21 @@ decaf_error_t API_NS(eddsa_verify) (
     
     error = API_NS(point_decode_like_eddsa)(r_point,signature);
     if (DECAF_SUCCESS != error) { return error; }
-    
+
     API_NS(scalar_t) challenge_scalar;
     {
-        /* Compute the challenge */
         hash_ctx_t hash;
-        hash_init_with_dom(hash,prehashed,context,context_len);
+        uint8_t prehashed_message[(prehashed ? 2*$(C_NS)_EDDSA_PRIVATE_BYTES : 0)];
+        /* Maybe prehash message */
+        if (prehashed) {
+            hash_init_with_dom(hash,prehashed,1,context,context_len);
+            hash_update(hash,message,message_len);
+            message_len = sizeof(prehashed_message);
+            hash_final(hash,prehashed_message,message_len);
+            message = (const uint8_t *)(prehashed_message);
+        }
+        /* Compute the challenge */
+        hash_init_with_dom(hash,prehashed,0,context,context_len);
         hash_update(hash,signature,$(C_NS)_EDDSA_PUBLIC_BYTES);
         hash_update(hash,pubkey,$(C_NS)_EDDSA_PUBLIC_BYTES);
         hash_update(hash,message,message_len);
@@ -224,6 +247,7 @@ decaf_error_t API_NS(eddsa_verify) (
         hash_destroy(hash);
         API_NS(scalar_decode_long)(challenge_scalar,challenge,sizeof(challenge));
         decaf_bzero(challenge,sizeof(challenge));
+        decaf_bzero(prehashed_message,sizeof(prehashed_message));
     }
     API_NS(scalar_sub)(challenge_scalar, API_NS(scalar_zero), challenge_scalar);
     
