@@ -66,6 +66,9 @@ static void hash_init_with_dom(
 void API_NS(eddsa_derive_public_key) (
     uint8_t pubkey[$(C_NS)_EDDSA_PUBLIC_BYTES],
     const uint8_t privkey[$(C_NS)_EDDSA_PRIVATE_BYTES]
+#if $(C_NS)_EDDSA_SUPPORTS_SHORTKEYS
+    , uint8_t shortkey
+#endif
 ) {
     /* only this much used for keygen */
     uint8_t secret_scalar_ser[$(C_NS)_EDDSA_PRIVATE_BYTES];
@@ -74,6 +77,9 @@ void API_NS(eddsa_derive_public_key) (
         secret_scalar_ser,
         sizeof(secret_scalar_ser),
         privkey,
+#if $(C_NS)_EDDSA_SUPPORTS_SHORTKEYS
+        (shortkey) ? 32 :
+#endif
         $(C_NS)_EDDSA_PRIVATE_BYTES
     );
     clamp(secret_scalar_ser);
@@ -109,6 +115,9 @@ void API_NS(eddsa_sign) (
     , const uint8_t *context,
     uint8_t context_len
 #endif
+#if $(C_NS)_EDDSA_SUPPORTS_SHORTKEYS
+    , uint8_t shortkey
+#endif
 ) {
 #if !SUPPORTS_CONTEXTS
     const uint8_t *const context = NULL;
@@ -137,6 +146,9 @@ void API_NS(eddsa_sign) (
             (uint8_t *)&expanded,
             sizeof(expanded),
             privkey,
+#if $(C_NS)_EDDSA_SUPPORTS_SHORTKEYS
+            (shortkey) ? 32 :
+#endif
             $(C_NS)_EDDSA_PRIVATE_BYTES
         );
         clamp(expanded.secret_scalar_ser);   

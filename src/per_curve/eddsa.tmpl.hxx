@@ -101,7 +101,12 @@ private:
     
     /** The post-expansion public key. */
     FixedArrayBuffer<$(C_NS)_EDDSA_PUBLIC_BYTES> pub_;
-    
+
+#if $(C_NS)_EDDSA_SUPPORTS_SHORTKEYS
+    /** Is the private key in short key form? */
+    bool shortkey_;
+#endif
+
 public:
     /** Underlying group */
     typedef $(cxx_ns) Group;
@@ -114,41 +119,86 @@ public:
     
     /** Do we support contexts for signatures?  If not, they must always be NULL */
     static const bool SUPPORTS_CONTEXTS = $(C_NS)_EDDSA_SUPPORTS_CONTEXTS;
-    
-    
+
+    /** Do we support short private keys (32 bytes)? */
+    static const bool SUPPORTS_SHORTKEYS = $(C_NS)_EDDSA_SUPPORTS_SHORTKEYS;
+
+#if $(C_NS)_EDDSA_SUPPORTS_SHORTKEYS
+    /** Short serialization size. */
+    static const size_t SHORT_SER_BYTES = 32;
+#endif
+
     /** Create but don't initialize */
     inline explicit PrivateKey(const NOINIT&) NOEXCEPT : priv_((NOINIT())), pub_((NOINIT())) { }
-    
+
     /** Read a private key from a string */
+#if $(C_NS)_EDDSA_SUPPORTS_SHORTKEYS
+    inline explicit PrivateKey(const Block &b) NOEXCEPT { *this = b; }
+#else
     inline explicit PrivateKey(const FixedBlock<SER_BYTES> &b) NOEXCEPT { *this = b; }
-    
+#endif
+
     /** Copy constructor */
     inline PrivateKey(const PrivateKey &k) NOEXCEPT { *this = k; }
     
     /** Create at random */
     inline explicit PrivateKey(Rng &r) NOEXCEPT : priv_(r) {
-        $(c_ns)_eddsa_derive_public_key(pub_.data(), priv_.data());
+        $(c_ns)_eddsa_derive_public_key(pub_.data(), priv_.data()
+#if $(C_NS)_EDDSA_SUPPORTS_SHORTKEYS
+            , shortkey_ = false
+#endif
+        );
     }
     
     /** Assignment from string */
+#if $(C_NS)_EDDSA_SUPPORTS_SHORTKEYS
+    inline PrivateKey &operator=(const Block &b) NOEXCEPT {
+        if (SER_BYTES != b.size() && SHORT_SER_BYTES != b.size()) throw LengthException();
+        memcpy(priv_.data(),b.data(),b.size());
+        shortkey_ = (SHORT_SER_BYTES == b.size());
+        $(c_ns)_eddsa_derive_public_key(pub_.data(), priv_.data(), shortkey_);
+        return *this;
+    }
+#else
     inline PrivateKey &operator=(const FixedBlock<SER_BYTES> &b) NOEXCEPT {
         memcpy(priv_.data(),b.data(),b.size());
         $(c_ns)_eddsa_derive_public_key(pub_.data(), priv_.data());
         return *this;
     }
+#endif
     
     /** Copy assignment */
     inline PrivateKey &operator=(const PrivateKey &k) NOEXCEPT {
-        memcpy(priv_.data(),k.priv_.data(), priv_.size());
+        memcpy(priv_.data(),k.priv_.data(),
+#if $(C_NS)_EDDSA_SUPPORTS_SHORTKEYS
+            (k.shortkey_) ? SHORT_SER_BYTES :
+#endif
+            priv_.size());
         memcpy(pub_.data(),k.pub_.data(), pub_.size());
+#if $(C_NS)_EDDSA_SUPPORTS_SHORTKEYS
+        shortkey_ = k.shortkey_;
+#endif
         return *this;
     }
     
     /** Serialization size. */
-    inline size_t serSize() const NOEXCEPT { return SER_BYTES; }
+    inline size_t serSize() const NOEXCEPT {
+#if $(C_NS)_EDDSA_SUPPORTS_SHORTKEYS
+        if (shortkey_) {
+            return SHORT_SER_BYTES;
+        }
+#endif
+        return SER_BYTES;
+    }
     
     /** Serialize into a buffer. */
     inline void serialize_into(unsigned char *x) const NOEXCEPT {
+#if $(C_NS)_EDDSA_SUPPORTS_SHORTKEYS
+        if (shortkey_) {
+            memcpy(x,priv_.data(), SHORT_SER_BYTES);
+            return;
+        }
+#endif
         memcpy(x,priv_.data(), priv_.size());
     }
     
@@ -189,6 +239,9 @@ public:
 #if $(C_NS)_EDDSA_SUPPORTS_CONTEXTS
             , context.data(),
             context.size()
+#endif
+#if $(C_NS)_EDDSA_SUPPORTS_SHORTKEYS
+            , shortkey_
 #endif
         );
         return out;

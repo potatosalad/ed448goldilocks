@@ -21,6 +21,9 @@ extern "C" {
 /** Does EdDSA support contexts? */
 #define $(C_NS)_EDDSA_SUPPORTS_CONTEXTS $(eddsa_supports_contexts)
 
+/** Does EdDSA support short private keys (32 bytes)? */
+#define $(C_NS)_EDDSA_SUPPORTS_SHORTKEYS $(eddsa_supports_shortkeys)
+
 /**
  * @brief EdDSA key generation.  This function uses a different (non-Decaf)
  * encoding.
@@ -31,6 +34,9 @@ extern "C" {
 void $(c_ns)_eddsa_derive_public_key (
     uint8_t pubkey[$(C_NS)_EDDSA_PUBLIC_BYTES],
     const uint8_t privkey[$(C_NS)_EDDSA_PRIVATE_BYTES]
+#if $(C_NS)_EDDSA_SUPPORTS_SHORTKEYS
+    , uint8_t shortkey
+#endif
 ) API_VIS NONNULL NOINLINE;
 
 /**
@@ -39,11 +45,12 @@ void $(c_ns)_eddsa_derive_public_key (
  * @param [out] signature The signature.
  * @param [in] privkey The private key.
  * @param [in] pubkey The public key.
- * @param [in] context A "context" for this signature of up to 255 bytes.
- * @param [in] context_len Length of the context.
  * @param [in] message The message to sign.
  * @param [in] message_len The length of the message.
  * @param [in] prehashed Nonzero if the message is actually the hash of something you want to sign.
+ * @param [in] context A "context" for this signature of up to 255 bytes.
+ * @param [in] context_len Length of the context.
+ * @param [in] shortkey Allow private key to be 32 bytes.
  */  
 void $(c_ns)_eddsa_sign (
     uint8_t signature[$(C_NS)_EDDSA_SIGNATURE_BYTES],
@@ -55,6 +62,9 @@ void $(c_ns)_eddsa_sign (
 #if $(C_NS)_EDDSA_SUPPORTS_CONTEXTS
     , const uint8_t *context,
     uint8_t context_len
+#endif
+#if $(C_NS)_EDDSA_SUPPORTS_SHORTKEYS
+    , uint8_t shortkey
 #endif
 ) API_VIS __attribute__((nonnull(1,2,3))) NOINLINE;
 

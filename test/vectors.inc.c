@@ -278,6 +278,22 @@ const uint8_t ed448_eddsa_sig[][114] = {{
     0xf4,0x4a,0x0d,0x59,0xb7,0xd3,0x98,0xc8,
     0x2c,0x6d,0xb4,0x8c,0x32,0xd6,0x0d,0xb2,
     0x3e,0x00
+}, {
+    0xb0,0x82,0x0f,0x1e,0xa1,0x3b,0x91,0x18,
+    0xd4,0x1c,0x59,0xde,0x96,0x37,0xe9,0x2d,
+    0x45,0x87,0x8b,0x88,0xc7,0x2f,0xc8,0x13,
+    0xa4,0x24,0x68,0xd9,0x0f,0x2f,0x32,0x3b,
+    0x13,0x0e,0x31,0x04,0xc9,0xfb,0x47,0x46,
+    0xfc,0xac,0xe1,0xb0,0x45,0x4c,0xff,0xaa,
+    0xa4,0x20,0xa4,0x05,0x47,0x4f,0xae,0x51,
+    0x80,0xf4,0x3b,0x5d,0x97,0x5e,0x57,0x9c,
+    0x05,0x9e,0xce,0xce,0x8c,0x6c,0xbb,0xc6,
+    0x21,0xba,0xf0,0x58,0x6d,0xb0,0x74,0x7f,
+    0x0b,0x2a,0x77,0x28,0xa6,0x60,0x6d,0xc8,
+    0x6d,0x0f,0x15,0x7b,0x56,0x28,0xe2,0x0d,
+    0xe9,0x3c,0x98,0xaf,0xa9,0xd5,0xb1,0xd4,
+    0xb6,0xba,0x69,0x94,0x69,0x0d,0xb4,0xfc,
+    0x2f,0x00
 }};
 template<> const Block Tests<Ed448Goldilocks>::eddsa_sk[] = {
     Block(ed448_eddsa_sk[0],57),
@@ -285,7 +301,8 @@ template<> const Block Tests<Ed448Goldilocks>::eddsa_sk[] = {
     Block(ed448_eddsa_sk[1],57),
     Block(ed448_eddsa_sk[2],57),
     Block(ed448_eddsa_sk[3],57),
-    // Block(ed448_eddsa_sk[4],32),
+    Block(ed448_eddsa_sk[4],32),
+    Block(ed448_eddsa_sk[4],32),
     Block(NULL,0)
 };
 template<> const Block Tests<Ed448Goldilocks>::eddsa_pk[] = {
@@ -294,7 +311,8 @@ template<> const Block Tests<Ed448Goldilocks>::eddsa_pk[] = {
     Block(ed448_eddsa_pk[1],57),
     Block(ed448_eddsa_pk[2],57),
     Block(ed448_eddsa_pk[3],57),
-    // Block(ed448_eddsa_pk[4],57)
+    Block(ed448_eddsa_pk[4],57),
+    Block(ed448_eddsa_pk[4],57)
 };
 template<> const Block Tests<Ed448Goldilocks>::eddsa_message[] = {
     Block(ed448_eddsa_message[0],0),
@@ -302,7 +320,8 @@ template<> const Block Tests<Ed448Goldilocks>::eddsa_message[] = {
     Block(ed448_eddsa_message[1],1),
     Block(ed448_eddsa_message[2],11),
     Block(ed448_eddsa_message[3],12),
-    // Block(ed448_eddsa_message[4],3)
+    Block(ed448_eddsa_message[4],3),
+    Block(ed448_eddsa_message[4],3)
 };
 template<> const bool Tests<Ed448Goldilocks>::eddsa_prehashed[] = {
     false,
@@ -310,7 +329,8 @@ template<> const bool Tests<Ed448Goldilocks>::eddsa_prehashed[] = {
     false,
     false,
     false,
-    // true
+    true,
+    true
 };
 template<> const Block Tests<Ed448Goldilocks>::eddsa_context[] = {
     Block(NULL,0),
@@ -318,7 +338,8 @@ template<> const Block Tests<Ed448Goldilocks>::eddsa_context[] = {
     Block(ed448_eddsa_context[0],3),
     Block(NULL,0),
     Block(NULL,0),
-    // Block(NULL,0)
+    Block(NULL,0),
+    Block(ed448_eddsa_context[0],3)
 };
 template<> const Block Tests<Ed448Goldilocks>::eddsa_sig[] = {
     Block(ed448_eddsa_sig[0],114),
@@ -326,7 +347,8 @@ template<> const Block Tests<Ed448Goldilocks>::eddsa_sig[] = {
     Block(ed448_eddsa_sig[4],114),
     Block(ed448_eddsa_sig[2],114),
     Block(ed448_eddsa_sig[3],114),
-    // Block(ed448_eddsa_sig[4],114)
+    Block(ed448_eddsa_sig[5],114),
+    Block(ed448_eddsa_sig[6],114)
 };
 
 const uint8_t ed25519_eddsa_sk[][32] = {{

@@ -38,7 +38,8 @@ curve_data = {
         "eddsa_hash": "sha512",
         "eddsa_supports_contexts": 0,
         "eddsa_dom": "",
-        "eddsa_sigma_iso": 1
+        "eddsa_sigma_iso": 1,
+        "eddsa_supports_shortkeys": 0
     },
     "ed448goldilocks" : {
         "name" : "Ed448-Goldilocks",
@@ -53,7 +54,8 @@ curve_data = {
         "wnaf":wnaf_config(5,3),
         "window_bits":5,
         
-        "eddsa_dom":"SigEd448"
+        "eddsa_dom": "SigEd448",
+        "eddsa_supports_shortkeys": 1
     }
 }
 
