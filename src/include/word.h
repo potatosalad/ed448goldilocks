@@ -9,6 +9,9 @@
 #define _XOPEN_SOURCE 600
 #define __STDC_WANT_LIB_EXT1__ 1 /* for memset_s */
 #include <string.h>
+#if defined(__sun) && defined(__SVR4)
+extern int posix_memalign(void **, size_t, size_t);
+#endif
 
 #include <assert.h>
 #include <stdint.h>
@@ -21,7 +24,13 @@
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE 1
 #endif
+#if defined(__sun) && defined(__SVR4)
+#include <sys/byteorder.h>
+#define htole64(x) LE_64(x)
+#define le64toh(x) LE_IN64(x)
+#else
 #include <endian.h>
+#endif
 #endif
 
 #include <stdlib.h>
