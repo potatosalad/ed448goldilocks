@@ -22,6 +22,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#if defined(__sun) && defined(__SVR4)
+#include <sys/rds.h>
+#endif
 
 /* Subset of Mathias Panzenböck's portable endian code, public domain */
 #if defined(__linux__) || defined(__CYGWIN__)
@@ -35,6 +38,10 @@
 #elif defined(__NetBSD__) || defined(__FreeBSD__) || defined(__DragonFly__)
 #	include <sys/endian.h>
 #	define le64toh(x) letoh64(x)
+#elif defined(__sun) && defined(__SVR4)
+#	include <sys/byteorder.h>
+#	define htole64(x) LE_64(x)
+#	define le64toh(x) LE_IN64(x)
 #elif defined(_WIN16) || defined(_WIN32) || defined(_WIN64) || defined(__WINDOWS__)
 #	include <winsock2.h>
 #	include <sys/param.h>
@@ -270,7 +277,7 @@ size_t sponge_max_output_bytes (
 ) {
     return (s->params->maxOut == 0xFF)
         ? SIZE_MAX
-        : ((200-s->params->rate)/2);
+        : (size_t)((200-s->params->rate)/2);
 }
 
 DEFSHAKE(128)
