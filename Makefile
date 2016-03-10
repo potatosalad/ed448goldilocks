@@ -20,11 +20,11 @@ BATBASE=ed448goldilocks_decaf_bats_$(TODAY)
 BATNAME=build/$(BATBASE)
 
 ifeq ($(UNAME),Darwin)
-CC = clang
-CXX = clang++
+CC ?= clang
+CXX ?= clang++
 else
-CC = gcc
-CXX = g++
+CC ?= gcc
+CXX ?= g++
 endif
 LD = $(CC)
 LDXX = $(CXX)
