@@ -56,16 +56,16 @@ author = "Mike Hamburg" # FUTURE
 for name in args.files:
     _,_,name_suffix = name.rpartition(".")
     template0 = open(name,"r").read()
-    
+
     data = per_map[args.per][args.item]
 
     template = template0
-    
+
     outname = args.o
     guard = args.guard
     if guard is None: guard = outname
     header_guard = "__" + guard.replace(".","_").replace("/","_").upper() + "__"
-    
+
     # Extract doxygenation
     m = re.match(r"^\s*/\*\*([^*]|\*[^/])+\*/[ \t]*\n",template)
     if m:
@@ -73,12 +73,12 @@ for name in args.files:
         doc = re.sub("\\s*\*/","",doc)
         template = template[m.end():]
     else: doc = ""
-    
+
     ns_doc = dedent(doc).strip().rstrip()
     ns_doc = redoc(guard, fillin(ns_doc,data), author)
     ns_code = fillin(template,data)
     ret = ns_doc + "\n"
-    
+
     if outname.endswith(".h") or outname.endswith(".hxx"):
         ns_code = dedent("""\n
             #ifndef %(header_guard)s
@@ -87,11 +87,11 @@ for name in args.files:
             #endif /* %(header_guard)s */
             """) % { "header_guard" : header_guard, "code": ns_code }
     ret += ns_code[1:-1]
-    
-    if not os.path.exists(os.path.dirname(outname)):
+
+    try:
         os.makedirs(os.path.dirname(outname))
+    except OSError as e:
+        if e.errno != 17:  # errno.EEXIST
+            raise
     with open(outname,"w") as f:
         f.write(ret + "\n")
-
-
-    
