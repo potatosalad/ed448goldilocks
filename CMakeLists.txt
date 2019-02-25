@@ -34,6 +34,13 @@ include(GNUInstallDirs)
 include(CheckSymbolExists)
 include(CMakePushCheckState)
 
+include_directories(
+	${GSOURCE_PATH}/include/
+	src/include/
+	src/
+	${CMAKE_CURRENT_BINARY_DIR}
+)
+
 set(STRICT_OPTIONS_CPP )
 set(STRICT_OPTIONS_C )
 set(STRICT_OPTIONS_CXX )

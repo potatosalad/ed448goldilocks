@@ -92,13 +92,17 @@ add_custom_target(generatorEd448goldilocks DEPENDS
 			${GSOURCE_PATH}/include/decaf/point_448.hxx
 			${GSOURCE_PATH}/include/decaf/ed448.hxx
 			)
+include_directories(
+	${PROJECT_SOURCE_DIR}/src/p448
+	${GSOURCE_PATH}/c/p448
+	${PROJECT_SOURCE_DIR}/src/p448/${TARGET_ARCH_DIR_P448}
+)
 
 add_executable(decaf_gen_tables_ed448goldilocks EXCLUDE_FROM_ALL ${GSOURCE_PATH}/c/ed448goldilocks/decaf_gen_tables.c
        			${GSOURCE_PATH}/c/ed448goldilocks/decaf.c
 			${GSOURCE_PATH}/c/ed448goldilocks/scalar.c
 			${PROJECT_SOURCE_DIR}/src/utils.c
 			$<TARGET_OBJECTS:p448>)
-target_link_libraries(decaf_gen_tables_ed448goldilocks PRIVATE p448)
 
 add_custom_target(decaf_tables_ed448goldilocks
 	COMMAND decaf_gen_tables_ed448goldilocks > ${PROJECT_SOURCE_DIR}/src/ed448goldilocks/decaf_tables.c

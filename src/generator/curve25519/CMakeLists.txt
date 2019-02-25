@@ -84,13 +84,17 @@ add_custom_target(generatorCurve25519 DEPENDS
 			${GSOURCE_PATH}/include/decaf/point_255.hxx
 			${GSOURCE_PATH}/include/decaf/ed255.hxx
 			)
+include_directories(
+	${PROJECT_SOURCE_DIR}/src/p25519
+	${GSOURCE_PATH}/c/p25519
+	${PROJECT_SOURCE_DIR}/src/p25519/${TARGET_ARCH_DIR_P25519}
+)
 
 add_executable(decaf_gen_tables_curve25519 EXCLUDE_FROM_ALL ${GSOURCE_PATH}/c/curve25519/decaf_gen_tables.c
        			${GSOURCE_PATH}/c/curve25519/decaf.c
 			${GSOURCE_PATH}/c/curve25519/scalar.c
 			${PROJECT_SOURCE_DIR}/src/utils.c
 			$<TARGET_OBJECTS:p25519>)
-target_link_libraries(decaf_gen_tables_curve25519 PRIVATE p25519)
 
 add_custom_target(decaf_tables_curve25519
 	COMMAND decaf_gen_tables_curve25519 > ${PROJECT_SOURCE_DIR}/src/curve25519/decaf_tables.c

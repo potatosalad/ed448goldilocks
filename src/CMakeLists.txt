@@ -61,6 +61,10 @@ else() # nothing picked yet, stick to the
 	message("Target architecture is general purpose 32bits")
 endif()
 
+include_directories(
+	${PROJECT_SOURCE_DIR}/src/include/${TARGET_ARCH_DIR}
+)
+
 set(DECAF_SOURCE_FILES_CXX
 )
 
@@ -75,10 +79,7 @@ if(ENABLE_STATIC)
 	add_library(decaf-static STATIC ${DECAF_HEADER_FILES} ${DECAF_SOURCE_FILES_C} ${DECAF_SOURCE_FILES_CXX} $<TARGET_OBJECTS:p25519> $<TARGET_OBJECTS:p448> $<TARGET_OBJECTS:CURVE25519> $<TARGET_OBJECTS:CURVE448>)
 	add_dependencies(decaf-static generatedCode)
 	set_target_properties(decaf-static PROPERTIES OUTPUT_NAME decaf)
-	target_include_directories(decaf-static
-        PUBLIC $<BUILD_INTERFACE:${GSOURCE_PATH}/include>
-        PRIVATE ${PROJECT_SOURCE_DIR}/src/include
-    )
+	target_include_directories(decaf-static PUBLIC)
 	target_link_libraries(decaf-static INTERFACE)
 endif()
 if(ENABLE_SHARED)
@@ -88,10 +89,7 @@ if(ENABLE_SHARED)
 		set_target_properties(decaf PROPERTIES LINK_FLAGS "-stdlib=libc++")
 	endif()
 	set_target_properties(decaf PROPERTIES VERSION ${DECAF_SO_VERSION})
-	target_include_directories(decaf
-        PUBLIC $<BUILD_INTERFACE:${GSOURCE_PATH}/include>
-        PRIVATE ${PROJECT_SOURCE_DIR}/src/include
-    )
+	target_include_directories(decaf PUBLIC)
 	target_link_libraries(decaf PRIVATE)
 	if(MSVC)
 		if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
