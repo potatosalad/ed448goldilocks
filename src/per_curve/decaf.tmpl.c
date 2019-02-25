@@ -233,7 +233,7 @@ void API_NS(deisogenize) (
 void API_NS(point_encode)( unsigned char ser[SER_BYTES], const point_t p ) {
     gf s,ie1,ie2;
     API_NS(deisogenize)(s,ie1,ie2,p,0,0,0);
-    gf_serialize(ser,s,1);
+    gf_serialize(ser,s);
 }
 
 decaf_error_t API_NS(point_decode) (
@@ -244,7 +244,7 @@ decaf_error_t API_NS(point_decode) (
     gf s, s2, num, tmp;
     gf_s *tmp2=s2, *ynum=p->z, *isr=p->x, *den=p->t;
     
-    mask_t succ = gf_deserialize(s, ser, 1, 0);
+    mask_t succ = gf_deserialize(s, ser, 0);
     succ &= bool_to_mask(allow_identity) | ~gf_eq(s, ZERO);
     succ &= ~gf_lobit(s);
     
@@ -840,7 +840,7 @@ void API_NS(point_debugging_pscale) (
 ) {
     gf gfac,tmp;
     /* NB this means you'll never pscale by negative numbers for p521 */
-    ignore_result(gf_deserialize(gfac,factor,0,0));
+    ignore_result(gf_deserialize(gfac,factor,0));
     gf_cond_sel(gfac,gfac,ONE,gf_eq(gfac,ZERO));
     gf_mul(tmp,p->x,gfac);
     gf_copy(q->x,tmp);
@@ -1135,7 +1135,7 @@ void API_NS(point_mul_by_ratio_and_encode_like_eddsa) (
     
     /* Encode */
     enc[DECAF_EDDSA_$(gf_shortname)_PRIVATE_BYTES-1] = 0;
-    gf_serialize(enc, x, 1);
+    gf_serialize(enc, x);
     enc[DECAF_EDDSA_$(gf_shortname)_PRIVATE_BYTES-1] |= 0x80 & gf_lobit(t);
 
     decaf_bzero(x,sizeof(x));
@@ -1156,7 +1156,7 @@ decaf_error_t API_NS(point_decode_like_eddsa_and_mul_by_ratio) (
     mask_t low = ~word_is_zero(enc2[DECAF_EDDSA_$(gf_shortname)_PRIVATE_BYTES-1] & 0x80);
     enc2[DECAF_EDDSA_$(gf_shortname)_PRIVATE_BYTES-1] &= ~0x80;
     
-    mask_t succ = gf_deserialize(p->y, enc2, 1, 0);
+    mask_t succ = gf_deserialize(p->y, enc2, 0);
 #if $(gf_bits % 8) == 0
     succ &= word_is_zero(enc2[DECAF_EDDSA_$(gf_shortname)_PRIVATE_BYTES-1]);
 #endif
@@ -1256,7 +1256,7 @@ decaf_error_t decaf_x$(gf_shortname) (
     const uint8_t scalar[X_PRIVATE_BYTES]
 ) {
     gf x1, x2, z2, x3, z3, t1, t2;
-    ignore_result(gf_deserialize(x1,base,1,0));
+    ignore_result(gf_deserialize(x1,base,0));
     gf_copy(x2,ONE);
     gf_copy(z2,ZERO);
     gf_copy(x3,x1);
@@ -1307,7 +1307,7 @@ decaf_error_t decaf_x$(gf_shortname) (
     gf_cond_swap(z2,z3,swap);
     gf_invert(z2,z2,0);
     gf_mul(x1,x2,z2);
-    gf_serialize(out,x1,1);
+    gf_serialize(out,x1);
     mask_t nz = ~gf_eq(x1,ZERO);
     
     decaf_bzero(x1,sizeof(x1));
@@ -1328,7 +1328,7 @@ void decaf_ed$(gf_shortname)_convert_public_key_to_x$(gf_shortname) (
 ) {
     gf y;
     const uint8_t mask = (uint8_t)(0xFE<<($((gf_bits-1)%8)));
-    ignore_result(gf_deserialize(y, ed, 1, mask));
+    ignore_result(gf_deserialize(y, ed, mask));
     
     {
         gf n,d;
@@ -1339,7 +1339,7 @@ void decaf_ed$(gf_shortname)_convert_public_key_to_x$(gf_shortname) (
         gf_sub(d, ONE, y); /* d = 1-y */
         gf_invert(d, d, 0); /* d = 1/(1-y) */
         gf_mul(y, n, d); /* u = (y+1)/(1-y) */
-        gf_serialize(x,y,1);
+        gf_serialize(x,y);
 #else /* EDDSA_USE_SIGMA_ISOGENY */
         /* u = y^2 * (1-dy^2) / (1-y^2) */
         gf_sqr(n,y); /* y^2*/
@@ -1349,7 +1349,7 @@ void decaf_ed$(gf_shortname)_convert_public_key_to_x$(gf_shortname) (
         gf_mulw(d,n,EDWARDS_D); /* dy^2*/
         gf_sub(d, ONE, d); /* 1-dy^2*/
         gf_mul(n, y, d); /* y^2 * (1-dy^2) / (1-y^2) */
-        gf_serialize(x,n,1);
+        gf_serialize(x,n);
 #endif /* EDDSA_USE_SIGMA_ISOGENY */
         
         decaf_bzero(y,sizeof(y));
@@ -1381,7 +1381,7 @@ void API_NS(point_mul_by_ratio_and_encode_like_x$(gf_shortname)) (
 #if IMAGINE_TWIST
     gf_sub(q->y,ZERO,q->y);
 #endif
-    gf_serialize(out,q->y,1);
+    gf_serialize(out,q->y);
     API_NS(point_destroy(q));
 }
 

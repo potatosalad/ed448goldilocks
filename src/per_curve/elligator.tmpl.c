@@ -31,7 +31,7 @@ void API_NS(point_from_hash_nonuniform) (
 ) {
     gf r0,r,a,b,c,N,e;
     const uint8_t mask = (uint8_t)(0xFE<<($((gf_bits-1)%8)));
-    ignore_result(gf_deserialize(r0,ser,0,mask));
+    ignore_result(gf_deserialize(r0,ser,mask));
     gf_strong_reduce(r0);
     gf_sqr(a,r0);
     gf_mul_qnr(r,a);
@@ -165,11 +165,7 @@ API_NS(invert_elligator_nonuniform) (
     //     succ &= ~(is_identity & sgn_ed_T); /* NB: there are no preimages of rotated identity. */
     // #endif
     
-    #if $(gf_bits) == 8*SER_BYTES + 1 /* p521 */
-        gf_serialize(recovered_hash,b,0);
-    #else
-        gf_serialize(recovered_hash,b,1);
-    #endif
+    gf_serialize(recovered_hash,b);
 #if $(gf_bits%8)
     #if COFACTOR==8
         recovered_hash[SER_BYTES-1] ^= (hint>>4)<<$(gf_bits%8);

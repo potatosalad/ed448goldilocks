@@ -27,7 +27,7 @@ void API_NS(precompute_wnafs) (
 );
 static void field_print(const gf f) {
     unsigned char ser[X_SER_BYTES];
-    gf_serialize(ser,f,1);
+    gf_serialize(ser,f);
     int b=0, i, comma=0;
     unsigned long long limb = 0;
     printf("{FIELD_LITERAL(");
