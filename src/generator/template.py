@@ -4,6 +4,7 @@ from curve_data import field_data,curve_data,ser,msqrt,ceil_log2
 import os
 import argparse
 import re
+import errno
 
 parser = argparse.ArgumentParser(description='Generate Decaf headers and other such files.')
 parser.add_argument('-o', required = True, help = "Output")
@@ -91,7 +92,7 @@ for name in args.files:
     try:
         os.makedirs(os.path.dirname(outname))
     except OSError as e:
-        if e.errno != 17:  # errno.EEXIST
+        if e.errno != errno.EEXIST:
             raise
     with open(outname,"w") as f:
         f.write(ret + "\n")
