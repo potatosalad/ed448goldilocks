@@ -8,8 +8,7 @@
 
 #define __DECAF_$(gf_shortname)_GF_DEFINED__ 1
 #define NLIMBS ($(gf_impl_bits//8)/sizeof(word_t))
-#define X_SER_BYTES $(((gf_bits-1)//8 + 1))
-#define SER_BYTES $(((gf_bits-2)//8 + 1))
+#define SER_BYTES $(((gf_bits-1)//8 + 1))
 typedef struct gf_$(gf_shortname)_s {
     word_t limb[NLIMBS];
 } __attribute__((aligned(32))) gf_$(gf_shortname)_s, gf_$(gf_shortname)_t[1];
@@ -39,7 +38,7 @@ typedef struct gf_$(gf_shortname)_s {
 #define gf_deserialize    gf_$(gf_shortname)_deserialize
 
 /* RFC 7748 support */
-#define X_PUBLIC_BYTES  X_SER_BYTES
+#define X_PUBLIC_BYTES  SER_BYTES
 #define X_PRIVATE_BYTES X_PUBLIC_BYTES
 #define X_PRIVATE_BITS  $(gf_bits)
 
