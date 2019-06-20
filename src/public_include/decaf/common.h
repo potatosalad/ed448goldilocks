@@ -115,7 +115,8 @@ decaf_succeed_if(decaf_bool_t x) {
 /** Return DECAF_TRUE iff x == DECAF_SUCCESS */
 static DECAF_INLINE decaf_bool_t
 decaf_successful(decaf_error_t e) {
-    decaf_dword_t w = ((decaf_word_t)e) ^  ((decaf_word_t)DECAF_SUCCESS);
+    decaf_word_t succ = DECAF_SUCCESS;
+    decaf_dword_t w = ((decaf_word_t)e) ^  succ;
     return (w-1)>>DECAF_WORD_BITS;
 }
     
