@@ -123,10 +123,9 @@ public:
         }
         
         SecureBuffer out(CRTP::SIG_BYTES);
-        decaf_ed$(gf_shortname)_sign (
+        decaf_ed$(gf_shortname)_keypair_sign (
             out.data(),
-            ((const CRTP*)this)->priv_.data(),
-            ((const CRTP*)this)->pub_.data(),
+            ((const CRTP*)this)->keypair_,
             message.data(),
             message.size(),
             0,
@@ -143,10 +142,9 @@ public:
     /** Sign a prehash context, and reset the context */
     inline SecureBuffer sign_prehashed ( const Prehash &ph ) const /*throw(std::bad_alloc)*/ {
         SecureBuffer out(CRTP::SIG_BYTES);
-        decaf_ed$(gf_shortname)_sign_prehash (
+        decaf_ed$(gf_shortname)_keypair_sign_prehash (
             out.data(),
-            ((const CRTP*)this)->priv_.data(),
-            ((const CRTP*)this)->pub_.data(),
+            ((const CRTP*)this)->keypair_,
             (const decaf_ed$(gf_shortname)_prehash_ctx_s*)ph.wrapped,
             ph.context_.data(),
             ph.context_.size()
@@ -180,11 +178,8 @@ private:
     friend class Signing<PrivateKey,PREHASHED>;
 /** @endcond */
     
-    /** The pre-expansion form of the signing key. */
-    FixedArrayBuffer<DECAF_EDDSA_$(gf_shortname)_PRIVATE_BYTES> priv_;
-    
-    /** The post-expansion public key. */
-    FixedArrayBuffer<DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES> pub_;
+    /** The expanded keypair. */
+    decaf_eddsa_$(gf_shortname)_keypair_t keypair_;
     
 public:
     /** Underlying group */
@@ -198,30 +193,32 @@ public:
     
     
     /** Create but don't initialize */
-    inline explicit PrivateKeyBase(const NOINIT&) DECAF_NOEXCEPT : priv_((NOINIT())), pub_((NOINIT())) { }
+    inline explicit PrivateKeyBase(const NOINIT&) DECAF_NOEXCEPT { }
     
     /** Read a private key from a string */
     inline explicit PrivateKeyBase(const FixedBlock<SER_BYTES> &b) DECAF_NOEXCEPT { *this = b; }
     
     /** Copy constructor */
-    inline PrivateKeyBase(const PrivateKey &k) DECAF_NOEXCEPT { *this = k; }
+    inline PrivateKeyBase(const PrivateKeyBase &k) DECAF_NOEXCEPT { *this = k; }
     
     /** Create at random */
-    inline explicit PrivateKeyBase(Rng &r) DECAF_NOEXCEPT : priv_(r) {
-        decaf_ed$(gf_shortname)_derive_public_key(pub_.data(), priv_.data());
-    }
-    
-    /** Assignment from string */
-    inline PrivateKeyBase &operator=(const FixedBlock<SER_BYTES> &b) DECAF_NOEXCEPT {
-        memcpy(priv_.data(),b.data(),b.size());
-        decaf_ed$(gf_shortname)_derive_public_key(pub_.data(), priv_.data());
-        return *this;
+    inline explicit PrivateKeyBase(Rng &r) DECAF_NOEXCEPT {
+        FixedArrayBuffer<DECAF_EDDSA_$(gf_shortname)_PRIVATE_BYTES> priv(r);
+        decaf_ed$(gf_shortname)_derive_keypair(keypair_, priv.data());
     }
     
     /** Copy assignment */
     inline PrivateKeyBase &operator=(const PrivateKey &k) DECAF_NOEXCEPT {
-        memcpy(priv_.data(),k.priv_.data(), priv_.size());
-        memcpy(pub_.data(),k.pub_.data(), pub_.size());
+        memcpy(keypair_,k.keypair_,sizeof(keypair_));
+        return *this;
+    }
+    
+    /** Create at random */
+    inline ~PrivateKeyBase() { decaf_ed$(gf_shortname)_keypair_destroy(keypair_); }
+    
+    /** Assignment from string */
+    inline PrivateKeyBase &operator=(const FixedBlock<SER_BYTES> &b) DECAF_NOEXCEPT {
+        decaf_ed$(gf_shortname)_derive_keypair(keypair_, b.data());
         return *this;
     }
     
@@ -230,13 +227,15 @@ public:
     
     /** Serialize into a buffer. */
     inline void serialize_into(unsigned char *x) const DECAF_NOEXCEPT {
-        memcpy(x,priv_.data(), priv_.size());
+        decaf_ed$(gf_shortname)_keypair_extract_private_key(x, keypair_);
     }
     
     /** Convert to X format (to be used for key exchange) */
     inline SecureBuffer convert_to_x() const {
         SecureBuffer out(DECAF_X$(gf_shortname)_PRIVATE_BYTES);
-        decaf_ed$(gf_shortname)_convert_private_key_to_x$(gf_shortname)(out.data(), priv_.data());
+        FixedArrayBuffer<DECAF_EDDSA_$(gf_shortname)_PRIVATE_BYTES> priv;
+        serialize_into(priv.data());
+        decaf_ed$(gf_shortname)_convert_private_key_to_x$(gf_shortname)(out.data(), priv.data());
         return out;
     }
     
@@ -388,14 +387,15 @@ public:
         return *this;
     }
 
-    /** Assignment from private key */
+    /** Assignment from public key */
     inline PublicKey &operator=(const PublicKey &p) DECAF_NOEXCEPT {
         return *this = p.pub_;
     }
 
     /** Assignment from private key */
     inline PublicKey &operator=(const PrivateKey &p) DECAF_NOEXCEPT {
-        return *this = p.pub_;
+        decaf_ed$(gf_shortname)_keypair_extract_public_key(pub_.data(), p.keypair_);
+        return *this;
     }
 
     /** Serialization size. */

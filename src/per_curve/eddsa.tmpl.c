@@ -128,8 +128,8 @@ void decaf_ed$(gf_shortname)_derive_public_key (
     API_NS(point_destroy)(p);
     decaf_bzero(secret_scalar_ser, sizeof(secret_scalar_ser));
 }
-
-void decaf_ed$(gf_shortname)_sign (
+        
+static void decaf_ed$(gf_shortname)_sign_internal (
     uint8_t signature[DECAF_EDDSA_$(gf_shortname)_SIGNATURE_BYTES],
     const uint8_t privkey[DECAF_EDDSA_$(gf_shortname)_PRIVATE_BYTES],
     const uint8_t pubkey[DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES],
@@ -214,6 +214,24 @@ void decaf_ed$(gf_shortname)_sign (
     API_NS(scalar_destroy)(challenge_scalar);
 }
 
+void decaf_ed$(gf_shortname)_sign (
+    uint8_t signature[DECAF_EDDSA_$(gf_shortname)_SIGNATURE_BYTES],
+    const uint8_t privkey[DECAF_EDDSA_$(gf_shortname)_PRIVATE_BYTES],
+    const uint8_t pubkey[DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES],
+    const uint8_t *message,
+    size_t message_len,
+    uint8_t prehashed,
+    const uint8_t *context,
+    uint8_t context_len
+) {
+    uint8_t rederived_pubkey[DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES];
+    decaf_ed$(gf_shortname)_derive_public_key(rederived_pubkey, privkey);
+    if (DECAF_TRUE != decaf_memeq(rederived_pubkey, pubkey, sizeof(rederived_pubkey))) {
+        abort();
+    }
+    decaf_ed$(gf_shortname)_sign_internal(signature,privkey,rederived_pubkey,message,
+        message_len,prehashed,context,context_len);
+}
 
 void decaf_ed$(gf_shortname)_sign_prehash (
     uint8_t signature[DECAF_EDDSA_$(gf_shortname)_SIGNATURE_BYTES],
@@ -231,7 +249,75 @@ void decaf_ed$(gf_shortname)_sign_prehash (
         hash_destroy(hash_too);
     }
 
-    decaf_ed$(gf_shortname)_sign(signature,privkey,pubkey,hash_output,sizeof(hash_output),1,context,context_len);
+    uint8_t rederived_pubkey[DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES];
+    decaf_ed$(gf_shortname)_derive_public_key(rederived_pubkey, privkey);
+    if (DECAF_TRUE != decaf_memeq(rederived_pubkey, pubkey, sizeof(rederived_pubkey))) {
+        abort();
+    }
+
+    decaf_ed$(gf_shortname)_sign_internal(signature,privkey,rederived_pubkey,hash_output,
+        sizeof(hash_output),1,context,context_len);
+    decaf_bzero(hash_output,sizeof(hash_output));
+}
+
+void decaf_ed$(gf_shortname)_derive_keypair (
+    decaf_eddsa_$(gf_shortname)_keypair_t keypair,
+    const uint8_t privkey[DECAF_EDDSA_$(gf_shortname)_PRIVATE_BYTES]
+) {
+    memcpy(keypair->privkey, privkey, DECAF_EDDSA_$(gf_shortname)_PRIVATE_BYTES);
+    decaf_ed$(gf_shortname)_derive_public_key(keypair->pubkey, keypair->privkey);
+}
+
+void decaf_ed$(gf_shortname)_keypair_extract_public_key (
+    uint8_t pubkey[DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES],
+    const decaf_eddsa_$(gf_shortname)_keypair_t keypair
+) {
+    memcpy(pubkey,keypair->pubkey,DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES);
+}
+
+void decaf_ed$(gf_shortname)_keypair_extract_private_key (
+    uint8_t privkey[DECAF_EDDSA_$(gf_shortname)_PRIVATE_BYTES],
+    const decaf_eddsa_$(gf_shortname)_keypair_t keypair
+) {
+    memcpy(privkey,keypair->privkey,DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES);
+}
+
+void decaf_ed$(gf_shortname)_keypair_destroy (
+    decaf_eddsa_$(gf_shortname)_keypair_t keypair
+) {
+    decaf_bzero(keypair, sizeof(decaf_eddsa_$(gf_shortname)_keypair_t));
+}
+
+void decaf_ed$(gf_shortname)_keypair_sign (
+    uint8_t signature[DECAF_EDDSA_$(gf_shortname)_SIGNATURE_BYTES],
+    const decaf_eddsa_$(gf_shortname)_keypair_t keypair,
+    const uint8_t *message,
+    size_t message_len,
+    uint8_t prehashed,
+    const uint8_t *context,
+    uint8_t context_len
+) {
+    decaf_ed$(gf_shortname)_sign_internal(signature,keypair->privkey,keypair->pubkey,message,
+        message_len,prehashed,context,context_len);
+}
+
+void decaf_ed$(gf_shortname)_keypair_sign_prehash (
+    uint8_t signature[DECAF_EDDSA_$(gf_shortname)_SIGNATURE_BYTES],
+    const decaf_eddsa_$(gf_shortname)_keypair_t keypair,
+    const decaf_ed$(gf_shortname)_prehash_ctx_t hash,
+    const uint8_t *context,
+    uint8_t context_len
+) {
+    uint8_t hash_output[EDDSA_PREHASH_BYTES];
+    {
+        decaf_ed$(gf_shortname)_prehash_ctx_t hash_too;
+        memcpy(hash_too,hash,sizeof(hash_too));
+        hash_final(hash_too,hash_output,sizeof(hash_output));
+        hash_destroy(hash_too);
+    }
+
+    decaf_ed$(gf_shortname)_sign_internal(signature,keypair->privkey,keypair->pubkey,hash_output,
+        sizeof(hash_output),1,context,context_len);
     decaf_bzero(hash_output,sizeof(hash_output));
 }
 
