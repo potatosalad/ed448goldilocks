@@ -311,7 +311,7 @@ class RistrettoPoint(QuotientEdwardsPoint):
 
 
 class Decaf_1_1_Point(QuotientEdwardsPoint):
-    """Like current decaf but tweaked for simplicity"""
+    """Like current decaf but tweaked for compatibility with Ristretto"""
     def encodeSpec(self):
         """Unoptimized specification for encoding"""
         a,d = self.a,self.d
@@ -486,7 +486,7 @@ class Decaf_1_1_Point(QuotientEdwardsPoint):
         altx = 2*s*isr*den*cls.isoMagic
         if negative(altx): isr = -isr
         x = 2*s *isr^2*den*num
-        y = (1-a*s^2) * isr*den
+        y = (1-a*s2) * isr*den
         
         if cls.cofactor==8 and (negative(x*y*cls.isoMagic) or y==0):
             raise InvalidEncodingException("x*y is invalid: %d, %d" % (x,y))
@@ -875,5 +875,5 @@ testDoubleAndEncode(TwistedEd448GoldilocksPoint,100)
 #testElligator(IsoEd448Point,100)
 #testElligator(Ed448GoldilocksPoint,100)
 #testElligator(TwistedEd448GoldilocksPoint,100)
-#gangtest([IsoEd448Point,TwistedEd448GoldilocksPoint,Ed448GoldilocksPoint],100)
-#gangtest([Ed25519Point,IsoEd25519Point],100)
+gangtest([IsoEd448Point,TwistedEd448GoldilocksPoint,Ed448GoldilocksPoint],100)
+gangtest([Ed25519Point,IsoEd25519Point],100)
