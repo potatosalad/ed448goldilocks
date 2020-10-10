@@ -481,6 +481,7 @@ static void test_cfrg_crypto() {
 
 static const bool eddsa_prehashed[];
 static const Block eddsa_sk[], eddsa_pk[], eddsa_message[], eddsa_context[], eddsa_sig[];
+static const bool eddsa_verify_should_succeed[];
 
 static void test_cfrg_vectors() {
     Test test("CFRG test vectors");
@@ -490,49 +491,60 @@ static void test_cfrg_vectors() {
     int the_ntests = (NTESTS < 1000000) ? 1000 : 1000000;
     
     /* EdDSA */
-    for (unsigned int t=0; eddsa_sk[t].size(); t++) {
-        typename EdDSA<Group>::PrivateKey priv(eddsa_sk[t]);
-        SecureBuffer eddsa_pk2 = priv.pub().serialize();
-        if (!memeq(SecureBuffer(eddsa_pk[t]), eddsa_pk2)) {
-            test.fail();
-            printf("    EdDSA PK vectors #%d disagree.", t);
-            printf("\n    Correct:   ");
-            for (unsigned i=0; i<eddsa_pk[t].size(); i++) printf("%02x", eddsa_pk[t][i]);
-            printf("\n    Incorrect: ");
-
-            for (unsigned i=0; i<eddsa_pk2.size(); i++) printf("%02x", eddsa_pk2[i]);
-            printf("\n");
-        }
-        SecureBuffer sig;
+    for (unsigned int t=0; t<sizeof(eddsa_sk)/sizeof(eddsa_sk[0]); t++) {
         
-        if (eddsa_prehashed[t]) {
-            typename EdDSA<Group>::PrivateKeyPh priv2(eddsa_sk[t]); 
-            sig = priv2.sign_with_prehash(eddsa_message[t],eddsa_context[t]);
-        } else {
-            sig = priv.sign(eddsa_message[t],eddsa_context[t]);
-        }
+        if (eddsa_sk[t].size()) {
+            typename EdDSA<Group>::PrivateKey priv(eddsa_sk[t]);
+            SecureBuffer eddsa_pk2 = priv.pub().serialize();
+            if (!memeq(SecureBuffer(eddsa_pk[t]), eddsa_pk2)) {
+                test.fail();
+                printf("    EdDSA PK vectors #%d disagree.", t);
+                printf("\n    Correct:   ");
+                for (unsigned i=0; i<eddsa_pk[t].size(); i++) printf("%02x", eddsa_pk[t][i]);
+                printf("\n    Incorrect: ");
 
-        if (!memeq(SecureBuffer(eddsa_sig[t]),sig)) {
-            test.fail();
-            printf("    EdDSA sig vectors disagree.");
-            printf("\n    Correct:   ");
-            for (unsigned i=0; i<eddsa_sig[t].size(); i++) printf("%02x", eddsa_sig[t][i]);
-            printf("\n    Incorrect: ");
+                for (unsigned i=0; i<eddsa_pk2.size(); i++) printf("%02x", eddsa_pk2[i]);
+                printf("\n");
+            }
+            SecureBuffer sig;
+        
+            if (eddsa_prehashed[t]) {
+                typename EdDSA<Group>::PrivateKeyPh priv2(eddsa_sk[t]); 
+                sig = priv2.sign_with_prehash(eddsa_message[t],eddsa_context[t]);
+            } else {
+                sig = priv.sign(eddsa_message[t],eddsa_context[t]);
+            }
 
-            for (unsigned i=0; i<sig.size(); i++) printf("%02x", sig[i]);
-            printf("\n");
+            if (!memeq(SecureBuffer(eddsa_sig[t]),sig)) {
+                test.fail();
+                printf("    EdDSA sig vectors #%d disagree.", t);
+                printf("\n    Correct:   ");
+                for (unsigned i=0; i<eddsa_sig[t].size(); i++) printf("%02x", eddsa_sig[t][i]);
+                printf("\n    Incorrect: ");
+
+                for (unsigned i=0; i<sig.size(); i++) printf("%02x", sig[i]);
+                printf("\n");
+            }
         }
         
+        bool verified;
         try {
             typename EdDSA<Group>::PublicKey pub(eddsa_pk[t]);
             if (eddsa_prehashed[t]) {
                 pub.verify_with_prehash(eddsa_sig[t], eddsa_message[t], eddsa_context[t]);
             } else {
-                priv.pub().verify(eddsa_sig[t], eddsa_message[t], eddsa_context[t]);
+                pub.verify(eddsa_sig[t], eddsa_message[t], eddsa_context[t]);
             }
+            verified = true;
         } catch(CryptoException&) {
+            verified = false;
+        }
+
+        if (verified != eddsa_verify_should_succeed[t]) {
             test.fail();
-            printf("    EdDSA Verify vector #%d disagree\n", t);
+            printf("    EdDSA Verify vector #%d disagree: verify %s but should %s\n",
+                t, verified ? "passed" : "failed",
+                eddsa_verify_should_succeed[t] ? "pass" : "fail");
         }
     }
     
@@ -580,6 +592,45 @@ static void test_eddsa() {
         } catch(CryptoException&) {
             test.fail();
             printf("    Signature validation failed on sig %d\n", i);
+        }
+        
+        try {
+            sig[(i/8) % sig.size()] ^= 1<<(i%8);
+            pub.verify(sig,message,context);
+            test.fail();
+            printf("    Signature validation passed incorrectly on corrupted sig %d\n", i);
+        } catch(CryptoException&) {}
+        sig[(i/8) % sig.size()] ^= 1<<(i%8);
+        
+        try {
+            const int size = EdDSA<Group>::PublicKey::SER_BYTES;
+            uint8_t ser[size];
+            pub.serialize_into(ser);
+            ser[(i/8) % size] ^= 1<<(i%8);
+            typename EdDSA<Group>::PublicKey pub2((FixedBlock<size>(ser)));
+            pub2.verify(sig,message,context);
+            test.fail();
+            printf("    Signature validation passed incorrectly on corrupted pubkey %d\n", i);
+        } catch(CryptoException&) {}
+
+        if (message.size() > 0) {
+            try {
+                message[(i/8) % message.size()] ^= 1<<(i%8);
+                pub.verify(sig,message,context);
+                test.fail();
+                printf("    Signature validation passed incorrectly on corrupted message %d\n", i);
+            } catch(CryptoException&) {}
+            message[(i/8) % message.size()] ^= 1<<(i%8);
+        }
+
+        if (context.size() > 0) {
+            try {
+                context[(i/8) % context.size()] ^= 1<<(i%8);
+                pub.verify(sig,message,context);
+                test.fail();
+                printf("    Signature validation passed incorrectly on corrupted message %d\n", i);
+            } catch(CryptoException&) {}
+            context[(i/8) % context.size()] ^= 1<<(i%8);
         }
         
         /* Test encode_like and torque */

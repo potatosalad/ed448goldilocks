@@ -354,11 +354,21 @@ decaf_error_t decaf_ed$(gf_shortname)_verify (
     API_NS(scalar_sub)(challenge_scalar, API_NS(scalar_zero), challenge_scalar);
     
     API_NS(scalar_t) response_scalar;
-    API_NS(scalar_decode_long)(
+    error = API_NS(scalar_decode)(
         response_scalar,
-        &signature[DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES],
-        DECAF_EDDSA_$(gf_shortname)_PRIVATE_BYTES
+        &signature[DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES]
     );
+    if (DECAF_SUCCESS != error) { return error; }
+
+#if DECAF_$(gf_bits)_SCALAR_BYTES < DECAF_EDDSA_$(gf_shortname)_PRIVATE_BYTES
+    for (unsigned i = DECAF_$(gf_bits)_SCALAR_BYTES;
+         i < DECAF_EDDSA_$(gf_shortname)_PRIVATE_BYTES;
+         i++) {
+        if (signature[DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES+i] != 0x00) {
+            return DECAF_FAILURE;
+        }
+    }
+#endif
     
     for (unsigned c=1; c<$(C_NS)_EDDSA_DECODE_RATIO; c<<=1) {
         API_NS(scalar_add)(response_scalar,response_scalar,response_scalar);
