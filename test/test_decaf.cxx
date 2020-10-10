@@ -575,6 +575,13 @@ static void test_eddsa() {
     Test test("EdDSA");
     SpongeRng rng(Block("test_eddsa"),SpongeRng::DETERMINISTIC);
     
+    int lg_scalar = Group::bits();
+    for (int cof = Group::REMOVED_COFACTOR; cof>1; cof>>=1) {
+        lg_scalar--;
+    }
+    typename Group::Scalar more_than_size = 1;
+    for (int i=0; i<lg_scalar; i++) more_than_size *= 2;
+    
     for (int i=0; i<NTESTS && test.passing_now; i++) {
         typename EdDSA<Group>::PrivateKey priv(rng);
         typename EdDSA<Group>::PublicKey pub(priv);
@@ -632,6 +639,28 @@ static void test_eddsa() {
             } catch(CryptoException&) {}
             context[(i/8) % context.size()] ^= 1<<(i%8);
         }
+        
+        // Construct sig which is numerically equal but improper
+        const int scalarbytes = Group::Scalar::SER_BYTES;
+        uint8_t *scalarpart = &sig[EdDSA<Group>::PublicKey::SER_BYTES];
+        typename Group::Scalar sig_r = FixedBlock<scalarbytes>(scalarpart);
+        memcpy(scalarpart, (-sig_r).serialize().data(), scalarbytes);
+        try {
+            pub.verify(sig,message,context);
+            test.fail();
+            printf("    Signature validation passed incorrectly on negated sig %d\n", i);
+        } catch(CryptoException&) {}
+        
+        
+        sig_r -= more_than_size;
+        memcpy(scalarpart, sig_r.serialize().data(), scalarbytes);
+        scalarpart[scalarbytes-1] += 1<<(lg_scalar%8);
+        try {
+            pub.verify(sig,message,context);
+            test.fail();
+            printf("    Signature validation passed incorrectly on improper sig %d\n", i);
+        } catch(CryptoException&) {}
+        
         
         /* Test encode_like and torque */
         Point p(rng);
