@@ -126,7 +126,7 @@ class QuotientEdwardsPoint(object):
     @classmethod
     def bytesToGf(cls,bytes,mustBeProper=True,mustBePositive=False,maskHiBits=False):
         """Convert little-endian bytes to field element, sanity check length"""
-        if len(bytes) != cls.encLen:
+        if len(bytes) != cls.encLen and mustBeProper:
             raise InvalidEncodingException("wrong length %d" % len(bytes))
         s = dec_le(bytes)
         if mustBeProper and s >= cls.F.order():
