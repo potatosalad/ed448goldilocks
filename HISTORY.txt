@@ -1,3 +1,17 @@
+October 10, 2020:
+    A paper by Konstantinos Chalkias, François Garillot, and Valeria
+    Nikolaenko, to be found at:
+
+    https://eprint.iacr.org/2020/1244.pdf
+    
+    discusses malleability in EdDSA implementations.  Their test
+    vectors reveal unintentional malleability in libdecaf's version
+    of EdDSA verify, in violation of RFC 8032.  With this malleability,
+    an attacker could modify an existing valid signature to create a
+    new signature that is still valid, but only for the same message.
+    
+    Releave v1.0.1, correcting this flaw.
+
 July 12, 2018:
     Release 1.0 with Johan Pascal's build scripts.
 
