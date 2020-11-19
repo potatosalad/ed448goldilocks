@@ -1273,7 +1273,7 @@ decaf_error_t decaf_x$(gf_shortname) (
         else if (t == X_PRIVATE_BITS-1) sb = -1;
         
         mask_t k_t = (sb>>(t%8)) & 1;
-        k_t = -k_t; /* set to all 0s or all 1s */
+        k_t = k_t?DECAF_MASK_ALL_SET:DECAF_MASK_ALL_UNSET; /* set to all 0s or all 1s */
         
         swap ^= k_t;
         gf_cond_swap(x2,x3,swap);
@@ -1394,7 +1394,7 @@ void decaf_x$(gf_shortname)_derive_public_key (
     memcpy(scalar2,scalar,sizeof(scalar2));
     scalar2[0] &= -(uint8_t)COFACTOR;
     
-    scalar2[X_PRIVATE_BYTES-1] &= ~(-1u<<((X_PRIVATE_BITS+7)%8));
+    scalar2[X_PRIVATE_BYTES-1] &= ~(0xFF<<((X_PRIVATE_BITS+7)%8));
     scalar2[X_PRIVATE_BYTES-1] |= 1<<((X_PRIVATE_BITS+7)%8);
     
     scalar_t the_scalar;

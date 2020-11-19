@@ -26,7 +26,7 @@ void gf_serialize (uint8_t serial[SER_BYTES], const gf x) {
             fill += LIMB_PLACE_VALUE(LIMBPERM(j));
             j++;
         }
-        serial[i] = buffer;
+        serial[i] = (uint8_t)buffer;
         fill -= 8;
         buffer >>= 8;
     }
@@ -37,7 +37,7 @@ mask_t gf_lobit(const gf x) {
     gf y;
     gf_copy(y,x);
     gf_strong_reduce(y);
-    return -(y->limb[0]&1);
+    return (y->limb[0]&1)?DECAF_MASK_ALL_SET:DECAF_MASK_ALL_UNSET;
 }
 
 /** Deserialize from wire format; return -1 on success and 0 on failure. */
@@ -46,19 +46,19 @@ mask_t gf_deserialize (gf x, const uint8_t serial[SER_BYTES], uint8_t hi_nmask) 
     dword_t buffer = 0;
     dsword_t scarry = 0;
     UNROLL for (unsigned int i=0; i<NLIMBS; i++) {
-        UNROLL while (fill < LIMB_PLACE_VALUE(LIMBPERM(i)) && j < SER_BYTES) {
+        UNROLL while (fill < (unsigned int)(LIMB_PLACE_VALUE(LIMBPERM(i))) && j < SER_BYTES) {
             uint8_t sj = serial[j];
             if (j==SER_BYTES-1) sj &= ~hi_nmask;
             buffer |= ((dword_t)sj) << fill;
             fill += 8;
             j++;
         }
-        x->limb[LIMBPERM(i)] = (i<NLIMBS-1) ? buffer & LIMB_MASK(LIMBPERM(i)) : buffer;
+        x->limb[LIMBPERM(i)] = (word_t)((i<NLIMBS-1) ? buffer & LIMB_MASK(LIMBPERM(i)) : buffer);
         fill -= LIMB_PLACE_VALUE(LIMBPERM(i));
         buffer >>= LIMB_PLACE_VALUE(LIMBPERM(i));
         scarry = (scarry + x->limb[LIMBPERM(i)] - MODULUS->limb[LIMBPERM(i)]) >> (8*sizeof(word_t));
     }
-    return word_is_zero(buffer) & ~word_is_zero(scarry);
+    return word_is_zero((word_t)buffer) & ~word_is_zero((word_t)scarry);
 }
 
 /** Reduce to canonical form. */
@@ -80,9 +80,9 @@ void gf_strong_reduce (gf a) {
      * common case: it was < p, so now scarry = -1 and this = x - p + 2^255
      * so let's add back in p.  will carry back off the top for 2^255.
      */
-    assert(word_is_zero(scarry) | word_is_zero(scarry+1));
+    assert(word_is_zero((word_t)scarry) | word_is_zero((word_t)scarry+1));
 
-    word_t scarry_0 = scarry;
+    word_t scarry_0 = (word_t)scarry;
     dword_t carry = 0;
 
     /* add it back */
@@ -92,7 +92,7 @@ void gf_strong_reduce (gf a) {
         carry >>= LIMB_PLACE_VALUE(LIMBPERM(i));
     }
 
-    assert(word_is_zero(carry + scarry_0));
+    assert(word_is_zero((word_t)(carry) + scarry_0));
 }
 
 /** Subtract two gf elements d=a-b */

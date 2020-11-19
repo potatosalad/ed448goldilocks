@@ -50,12 +50,16 @@ extern int posix_memalign(void **, size_t, size_t);
 
 #if (ARCH_WORD_BITS == 64)
     typedef uint64_t word_t, mask_t;
+    static const mask_t DECAF_MASK_ALL_SET = (mask_t)0xFFFFFFFFFFFFFFFF;
+    static const mask_t DECAF_MASK_ALL_UNSET = (mask_t)0x0;
     typedef __uint128_t dword_t;
     typedef int32_t hsword_t;
     typedef int64_t sword_t;
     typedef __int128_t dsword_t;
 #elif (ARCH_WORD_BITS == 32)
     typedef uint32_t word_t, mask_t;
+    static const mask_t DECAF_MASK_ALL_SET = (mask_t)0xFFFFFFFF;
+    static const mask_t DECAF_MASK_ALL_UNSET = (mask_t)0x0;
     typedef uint64_t dword_t;
     typedef int16_t hsword_t;
     typedef int32_t sword_t;

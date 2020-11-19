@@ -20,7 +20,7 @@ typedef SSIZE_T ssize_t;
 #include <decaf/shake.h>
 #include <decaf/sha512.h>
 
-static void usage() {
+static void usage(void) {
     fprintf(
         stderr,
         "decaf_shakesum [shake256|shake128|sha3-224|sha3-384|sha3-512|sha512] < infile > outfile\n"

@@ -48,7 +48,7 @@ void gf_mul (gf_s *__restrict__ cs, const gf as, const gf bs) {
     accum >>= 26;
     
     assert(accum < masko);
-    c[1] += accum;
+    c[1] += (uint32_t)accum;
 }
 
 void gf_mulw_unsigned (gf_s *__restrict__ cs, const gf as, uint32_t b) {
@@ -80,7 +80,7 @@ void gf_mulw_unsigned (gf_s *__restrict__ cs, const gf as, uint32_t b) {
     accum >>= 26;
     
     assert(accum < masko);
-    c[1] += accum;
+    c[1] += (uint32_t)accum;
 }
 
 void gf_sqr (gf_s *__restrict__ cs, const gf as) {

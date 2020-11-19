@@ -25,6 +25,9 @@
 #if defined(_MSC_VER)
 #   include <io.h>
 #include <BaseTsd.h>
+#define open _open
+#define read _read
+#define close _close
 typedef SSIZE_T ssize_t;
 #else
 #   include <unistd.h>
@@ -110,7 +113,7 @@ void decaf_spongerng_next (
     uint8_t lenx[8];
     size_t len1 = len;
     for (unsigned i=0; i<sizeof(lenx); i++) {
-        lenx[i] = len1;
+        lenx[i] = (uint8_t)len1;
         len1 >>= 8;
     }
     decaf_sha3_update(prng->sponge,lenx,sizeof(lenx));

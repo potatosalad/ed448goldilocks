@@ -5,6 +5,10 @@
 #
 ############################################################################
 
+if(MSVC)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif()
+
 set(DECAF_HEADER_FILES
 	include/constant_time.h
 	include/field.h
@@ -79,21 +83,18 @@ if(ENABLE_STATIC)
 	add_library(decaf-static STATIC ${DECAF_HEADER_FILES} ${DECAF_SOURCE_FILES_C} ${DECAF_SOURCE_FILES_CXX} $<TARGET_OBJECTS:p25519> $<TARGET_OBJECTS:p448> $<TARGET_OBJECTS:CURVE25519> $<TARGET_OBJECTS:CURVE448>)
 	add_dependencies(decaf-static generatedCode)
 	set_target_properties(decaf-static PROPERTIES OUTPUT_NAME decaf)
-	target_include_directories(decaf-static PUBLIC)
+	target_include_directories(decaf-static INTERFACE $<INSTALL_INTERFACE:include/decaf>)
 	target_link_libraries(decaf-static INTERFACE)
 endif()
 if(ENABLE_SHARED)
 	add_library(decaf SHARED ${DECAF_HEADER_FILES} ${DECAF_SOURCE_FILES_C} ${DECAF_SOURCE_FILES_CXX} $<TARGET_OBJECTS:p25519> $<TARGET_OBJECTS:p448> $<TARGET_OBJECTS:CURVE25519> $<TARGET_OBJECTS:CURVE448>)
 	add_dependencies(decaf generatedCode)
-	if(APPLE)
-		set_target_properties(decaf PROPERTIES LINK_FLAGS "-stdlib=libc++")
-	endif()
 	set_target_properties(decaf PROPERTIES VERSION ${DECAF_SO_VERSION})
-	target_include_directories(decaf PUBLIC)
+	target_include_directories(decaf INTERFACE $<INSTALL_INTERFACE:include/decaf>)
 	target_link_libraries(decaf PRIVATE)
 	if(MSVC)
 		if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-			install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/decaf.pdb
+			install(FILES $<TARGET_PDB_FILE:decaf>
 				DESTINATION ${CMAKE_INSTALL_BINDIR}
 				PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
 			)

@@ -88,11 +88,11 @@ void gf_mulw_unsigned (gf_s *__restrict__ cs, const gf as, uint32_t b) {
 
     accum0 += accum8 + c[8];
     c[8] = accum0 & mask;
-    c[9] += accum0 >> 28;
+    c[9] += (uint32_t)(accum0 >> 28);
 
     accum8 += c[0];
     c[0] = accum8 & mask;
-    c[1] += accum8 >> 28;
+    c[1] += (uint32_t)(accum8 >> 28);
 }
 
 void gf_sqr (gf_s *__restrict__ cs, const gf as) {

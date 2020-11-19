@@ -98,7 +98,7 @@ decaf_error_t decaf_sha3_update (
         uint8_t* state = &decaf_sponge->state->b[decaf_sponge->params->position];
         if (cando > len) {
             for (i = 0; i < len; i += 1) state[i] ^= in[i];
-            decaf_sponge->params->position += len;
+            decaf_sponge->params->position += (uint8_t)len;
             break;
         } else {
             for (i = 0; i < cando; i += 1) state[i] ^= in[i];
@@ -121,7 +121,7 @@ decaf_error_t decaf_sha3_output (
     
     if (decaf_sponge->params->max_out != 0xFF) {
         if (decaf_sponge->params->remaining >= len) {
-            decaf_sponge->params->remaining -= len;
+            decaf_sponge->params->remaining -= (uint8_t)len;
         } else {
             decaf_sponge->params->remaining = 0;
             ret = DECAF_FAILURE;
@@ -148,7 +148,7 @@ decaf_error_t decaf_sha3_output (
         uint8_t* state = &decaf_sponge->state->b[decaf_sponge->params->position];
         if (cando > len) {
             memcpy(out, state, len);
-            decaf_sponge->params->position += len;
+            decaf_sponge->params->position += (uint8_t)len;
             return ret;
         } else {
             memcpy(out, state, cando);

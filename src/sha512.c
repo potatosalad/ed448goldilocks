@@ -243,11 +243,11 @@ void decaf_sha512_final(decaf_sha512_ctx_t ctx, uint8_t *out, size_t length) {
     }
     
     for (size_t i=0; i<8; i++)
-        ctx->block[120 + i] = bp >> (56 - 8*i);
+        ctx->block[120 + i] = (uint8_t)(bp >> (56 - 8*i));
     hashblock(ctx);
     
     for (size_t i=0; i<length; i++) {
-        out[i] = ctx->state[i/8] >> (56 - 8*(i%8));
+        out[i] = (uint8_t)(ctx->state[i/8] >> (56 - 8*(i%8)));
     }
     
     decaf_sha512_init(ctx);

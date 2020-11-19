@@ -15,7 +15,7 @@ find_package( PythonInterp 2.7 REQUIRED )
 option(ENABLE_SHARED "Build shared library." ON)
 option(ENABLE_STATIC "Build static library." ON)
 option(ENABLE_STRICT "Build with strict compile options." YES)
-option(ENABLE_TESTS  "Enable compilation of tests." YES)
+option(ENABLE_TESTS  "Enable compilation of tests." OFF)
 option(GENERATED_SOURCE_PATH "Where the generated source code is stored, default in the building tree" OFF)
 
 if (GENERATED_SOURCE_PATH)
@@ -23,7 +23,7 @@ if (GENERATED_SOURCE_PATH)
 else()
 	set(GSOURCE_PATH ${PROJECT_BINARY_DIR}/src/GENERATED)
 endif()
-message("Generated source code will be in ${GSOURCE_PATH}")
+message("Generated source code in ${GSOURCE_PATH}")
 
 if(NOT CPACK_GENERATOR AND NOT CMAKE_INSTALL_RPATH AND CMAKE_INSTALL_PREFIX)
 	set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_FULL_LIBDIR})
@@ -49,40 +49,39 @@ if(MSVC)
 		set(STRICT_OPTIONS_CPP "${STRICT_OPTIONS_CPP} /WX")
 	endif()
 else()
-        set(STRICT_OPTIONS_CXX "${STRICT_OPTIONS_CXX}  -std=c++11 -O2 ")
-	set(STRICT_OPTIONS_CPP "${STRICT_OPTIONS_CPP}  -Wall -Wuninitialized -Wno-deprecated-declarations -Wno-missing-field-initializers ")
-	set(STRICT_OPTIONS_C "${STRICT_OPTIONS_C}  -std=c99 -O2 -Wstrict-prototypes -Wno-error=strict-prototypes -ffunction-sections -fdata-sections -fvisibility=hidden -fomit-frame-pointer ")
-	if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
-		set(STRICT_OPTIONS_CPP "${STRICT_OPTIONS_CPP} -Qunused-arguments -Wno-array-bounds ")
-	endif()
-	if(APPLE)
-		set(STRICT_OPTIONS_CPP "${STRICT_OPTIONS_CPP} -Wno-error=unknown-warning-option -Qunused-arguments -Wno-tautological-compare -Wno-unused-function -Wno-array-bounds ")
-		set(STRICT_OPTIONS_CXX "${STRICT_OPTIONS_CXX} -stdlib=libc++ ")
+	set(STRICT_OPTIONS_CXX "${STRICT_OPTIONS_CXX} -std=c++11 -O2")
+	set(STRICT_OPTIONS_CPP "${STRICT_OPTIONS_CPP} -Wall -Wuninitialized -Wno-deprecated-declarations -Wno-missing-field-initializers")
+	set(STRICT_OPTIONS_C "${STRICT_OPTIONS_C} -std=c99 -O2 -Wstrict-prototypes -Wno-error=strict-prototypes -fvisibility=hidden")
+	if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+		set(STRICT_OPTIONS_CPP "${STRICT_OPTIONS_CPP} -Wno-error=unknown-warning-option -Qunused-arguments -Wno-tautological-compare")
+		set(STRICT_OPTIONS_CPP "${STRICT_OPTIONS_CPP} -Wno-unused-function -Wno-array-bounds -Wno-pass-failed -Wno-error=sizeof-array-div")
 	endif()
 	if(ENABLE_STRICT)
-		set(STRICT_OPTIONS_CPP "${STRICT_OPTIONS_CPP} -Werror -Wextra -Wno-unused-parameter -fno-strict-aliasing ")
+		set(STRICT_OPTIONS_CPP "${STRICT_OPTIONS_CPP} -Werror -Wextra -Wno-unused-parameter -fno-strict-aliasing")
 	endif()
 endif()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${STRICT_OPTIONS_C}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${STRICT_OPTIONS_CXX}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${STRICT_OPTIONS_C} ${STRICT_OPTIONS_CPP}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${STRICT_OPTIONS_CXX} ${STRICT_OPTIONS_CPP}")
 
 add_subdirectory(src)
 
 if(ENABLE_TESTS)
-        enable_testing()
+	enable_testing()
 	add_subdirectory(test)
 endif()
 
 include(CMakePackageConfigHelpers)
+set(ConfigPackageLocation share/decaf/cmake)
 export(EXPORT ${EXPORT_TARGETS_NAME}Targets
 	FILE "${CMAKE_CURRENT_BINARY_DIR}/DecafTargets.cmake"
 )
-configure_file(cmake/DecafConfig.cmake.in
+configure_package_config_file(cmake/DecafConfig.cmake.in
 	"${CMAKE_CURRENT_BINARY_DIR}/DecafConfig.cmake"
-	@ONLY
+	INSTALL_DESTINATION ${ConfigPackageLocation}
+	NO_SET_AND_CHECK_MACRO
 )
-set(ConfigPackageLocation share/decaf/cmake)
+
 install(EXPORT ${EXPORT_TARGETS_NAME}Targets
 	FILE DecafTargets.cmake
 	DESTINATION ${ConfigPackageLocation}
@@ -109,7 +108,7 @@ set(CPACK_PACKAGE_NAME "decaf")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 set(CPACK_SOURCE_GENERATOR "TGZ")
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}")
-set(CPACK_SOURCE_IGNORE_FILES
+set(CPACK_SOURCE_IGnore_FILES
         "^${CMAKE_BINARY_DIR}"
         "/\\\\..+"
 )
