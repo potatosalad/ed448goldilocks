@@ -37,7 +37,7 @@ mask_t gf_lobit(const gf x) {
     gf y;
     gf_copy(y,x);
     gf_strong_reduce(y);
-    return (y->limb[0]&1)?DECAF_MASK_ALL_SET:DECAF_MASK_ALL_UNSET;
+    return ~((1-(y->limb[0]&1))*DECAF_MASK_ALL_SET); /* expand y->limb[0] bit 0 to the whole mask without branching */
 }
 
 /** Deserialize from wire format; return -1 on success and 0 on failure. */

@@ -314,7 +314,7 @@ void API_NS(scalar_halve) (
     scalar_t out,
     const scalar_t a
 ) {
-    decaf_word_t mask = (a->limb[0] & 1)?DECAF_WORD_ALL_SET:DECAF_WORD_ALL_UNSET;
+    decaf_word_t mask = ~((1-(a->limb[0] & 1))*DECAF_WORD_ALL_SET); /* expand a->limb[0] bit 0 to the whole mask without branching */
     decaf_dword_t chain = 0;
     unsigned int i;
     for (i=0; i<SCALAR_LIMBS; i++) {

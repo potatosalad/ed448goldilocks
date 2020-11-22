@@ -1272,8 +1272,7 @@ decaf_error_t decaf_x$(gf_shortname) (
         if (t/8==0) sb &= -(uint8_t)COFACTOR;
         else if (t == X_PRIVATE_BITS-1) sb = -1;
         
-        mask_t k_t = (sb>>(t%8)) & 1;
-        k_t = k_t?DECAF_MASK_ALL_SET:DECAF_MASK_ALL_UNSET; /* set to all 0s or all 1s */
+        mask_t k_t = ~((1 - ((sb>>(t%8)) & 1))*DECAF_MASK_ALL_SET); /* expand mask bit 0 to the whole mask without branching */
         
         swap ^= k_t;
         gf_cond_swap(x2,x3,swap);
