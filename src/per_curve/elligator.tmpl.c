@@ -109,13 +109,13 @@ API_NS(invert_elligator_nonuniform) (
     uint32_t hint_
 ) {
     mask_t hint = hint_;
-    mask_t sgn_s = ~((1 - (hint & 1))*DECAF_MASK_ALL_SET), /* expand hint bit 0 to the whole mask without branching */
-        sgn_altx = ~((1 - (hint>>1 & 1))*DECAF_MASK_ALL_SET),
-        sgn_r0 = ~((1 - (hint>>2 & 1))*DECAF_MASK_ALL_SET),
+    mask_t sgn_s = bit_to_mask(hint & 1),
+        sgn_altx = bit_to_mask((hint>>1) & 1),
+        sgn_r0 = bit_to_mask((hint>>2) & 1),
         /* FUTURE MAGIC: eventually if there's a curve which needs sgn_ed_T but not sgn_r0,
          * change this mask extraction.
          */
-        sgn_ed_T = ~((1 - (hint>>3 & 1))*DECAF_MASK_ALL_SET);
+        sgn_ed_T = bit_to_mask((hint>>3) & 1);
     gf a,b,c;
     API_NS(deisogenize)(a,b,c,p,sgn_s,sgn_altx,sgn_ed_T);
     

@@ -67,6 +67,22 @@ extern int posix_memalign(void **, size_t, size_t);
 #else
     #error "For now, libdecaf only supports 32- and 64-bit architectures."
 #endif
+
+/**
+ * Expand bit 0 of the given uint8_t to a mask_t all 1 or all 0
+ * The input must be either 0 or 1
+ */
+DECAF_INLINE mask_t bit_to_mask(uint8_t bit) {
+#ifdef _MSC_VER
+#pragma warning ( push)
+#pragma warning ( disable : 4146)
+#endif
+	return -bit;
+#ifdef _MSC_VER
+#pragma warning ( pop)
+#endif
+
+}
     
 /* Scalar limbs are keyed off of the API word size instead of the arch word size. */
 #if DECAF_WORD_BITS == 64
