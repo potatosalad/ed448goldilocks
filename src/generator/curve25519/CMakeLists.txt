@@ -75,10 +75,13 @@ add_custom_command(
     COMMENT "Generating code for include/decaf/ed255.hxx"
 )
 
+add_custom_target(generatorCurve25519AndGenTablesCommon DEPENDS
+			${GSOURCE_PATH}/c/curve25519/decaf.c
+			${GSOURCE_PATH}/c/curve25519/scalar.c
+			)
 add_custom_target(generatorCurve25519 DEPENDS
 			generatorP25519
-       			${GSOURCE_PATH}/c/curve25519/scalar.c
-       			${GSOURCE_PATH}/c/curve25519/decaf.c
+			generatorCurve25519AndGenTablesCommon
        			${GSOURCE_PATH}/c/curve25519/elligator.c
        			${GSOURCE_PATH}/c/curve25519/eddsa.c
 			${GSOURCE_PATH}/include/decaf/point_255.hxx
@@ -91,10 +94,11 @@ include_directories(
 )
 
 add_executable(decaf_gen_tables_curve25519 EXCLUDE_FROM_ALL ${GSOURCE_PATH}/c/curve25519/decaf_gen_tables.c
-       			${GSOURCE_PATH}/c/curve25519/decaf.c
+			${GSOURCE_PATH}/c/curve25519/decaf.c
 			${GSOURCE_PATH}/c/curve25519/scalar.c
 			${PROJECT_SOURCE_DIR}/src/utils.c
 			$<TARGET_OBJECTS:p25519>)
+add_dependencies(decaf_gen_tables_curve25519 generatorCurve25519AndGenTablesCommon)
 
 add_custom_target(decaf_tables_curve25519
 	COMMAND decaf_gen_tables_curve25519 > ${PROJECT_SOURCE_DIR}/src/curve25519/decaf_tables.c
