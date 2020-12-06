@@ -73,7 +73,7 @@ DECAF_INLINE mask_t bit_to_mask(uint8_t bit) {
 #pragma warning ( push)
 #pragma warning ( disable : 4146)
 #endif
-	return -bit;
+	return -(mask_t)bit;
 #ifdef _MSC_VER
 #pragma warning ( pop)
 #endif
