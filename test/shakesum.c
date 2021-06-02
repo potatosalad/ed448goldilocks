@@ -13,6 +13,7 @@
 #include <io.h>
 #include <BaseTsd.h>
 typedef SSIZE_T ssize_t;
+#define read _read
 #else
 #include <unistd.h>
 #endif

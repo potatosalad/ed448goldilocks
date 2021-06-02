@@ -9,6 +9,18 @@
  * @warning The SpongeRNG code isn't stable.  Future versions are likely to
  * have different outputs.  Of course, this only matters in deterministic mode.
  */
+#if defined(_MSC_VER)
+#define _CRT_RAND_S
+#include <stdlib.h>
+#   include <io.h>
+#include <BaseTsd.h>
+#define open _open
+#define read _read
+#define close _close
+typedef SSIZE_T ssize_t;
+#else
+#   include <unistd.h>
+#endif
 
 #define __STDC_WANT_LIB_EXT1__ 1 /* for memset_s */
 #include <assert.h>
@@ -22,16 +34,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#if defined(_MSC_VER)
-#   include <io.h>
-#include <BaseTsd.h>
-#define open _open
-#define read _read
-#define close _close
-typedef SSIZE_T ssize_t;
-#else
-#   include <unistd.h>
-#endif
+
 
 /** Get entropy from a CPU, preferably in the form of RDRAND, but possibly instead from RDTSC. */
 static void get_cpu_entropy(uint8_t *entropy, size_t len) {
@@ -161,12 +164,35 @@ decaf_error_t decaf_spongerng_init_from_file (
     prng->sponge->params->remaining = !deterministic; /* A bit of a hack; this param is ignored for SHAKE */
     if (!len) return DECAF_FAILURE;
 
+#if defined _MSC_VER
+    /* no /dev/urandom on windows, use rand_s instead */
+    if (strcmp(file, "/dev/urandom") == 0) {
+        unsigned int r;
+        uint8_t buffer[sizeof(unsigned int)];
+        errno_t err;
+        while (len) {
+            int i;
+            err = rand_s(&r);
+            if (err != 0) {
+                return DECAF_FAILURE;
+            }
+            for (i = 0; i < sizeof(unsigned int); i++) {
+                buffer[i] = (uint8_t)(r & 0xff);
+                r >>= 8;
+            }
+            size_t consumed = (len > sizeof(buffer)) ? sizeof(buffer) : len;
+            decaf_sha3_update(prng->sponge, buffer, consumed);
+            len -= consumed;
+	}
+    } else {
+#endif /* _MSC_VER */
+
     int fd = open(file, O_RDONLY);
     if (fd < 0) return DECAF_FAILURE;
     
     uint8_t buffer[128];
     while (len) {
-        ssize_t red = read(fd, buffer, (len > sizeof(buffer)) ? sizeof(buffer) : len);
+        ssize_t red = read(fd, buffer, (len > sizeof(buffer)) ? sizeof(buffer) : (unsigned int)len);
         if (red <= 0) {
             close(fd);
             return DECAF_FAILURE;
@@ -175,6 +201,9 @@ decaf_error_t decaf_spongerng_init_from_file (
         len -= red;
     };
     close(fd);
+#if defined _MSC_VER
+    }
+#endif /* _MSC_VER */
     const uint8_t nope;
     decaf_spongerng_stir(prng,&nope,0);
     

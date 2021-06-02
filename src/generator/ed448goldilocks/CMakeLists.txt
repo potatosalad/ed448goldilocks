@@ -82,13 +82,13 @@ add_custom_command(
     COMMENT "Generating code for include/decaf/ed448.hxx"
 )
 
-add_custom_target(generatorEd448AndGenTablesCommon DEPENDS
+add_custom_target(genEd448nTab DEPENDS
 			${GSOURCE_PATH}/c/ed448goldilocks/scalar.c
 			${GSOURCE_PATH}/c/ed448goldilocks/decaf.c
 			)
 add_custom_target(generatorEd448goldilocks DEPENDS
 			generatorP448
-			generatorEd448AndGenTablesCommon
+			genEd448nTab
        			${GSOURCE_PATH}/c/ed448goldilocks/elligator.c
        			${GSOURCE_PATH}/c/ed448goldilocks/eddsa.c
 			${GSOURCE_PATH}/include/decaf/point_448.hxx
@@ -105,7 +105,7 @@ add_executable(decaf_gen_tables_ed448goldilocks EXCLUDE_FROM_ALL ${GSOURCE_PATH}
 			${GSOURCE_PATH}/c/ed448goldilocks/scalar.c
 			${PROJECT_SOURCE_DIR}/src/utils.c
 			$<TARGET_OBJECTS:p448>)
-add_dependencies(decaf_gen_tables_ed448goldilocks generatorEd448AndGenTablesCommon)
+add_dependencies(decaf_gen_tables_ed448goldilocks genEd448nTab)
 
 add_custom_target(decaf_tables_ed448goldilocks
 	COMMAND decaf_gen_tables_ed448goldilocks > ${PROJECT_SOURCE_DIR}/src/ed448goldilocks/decaf_tables.c

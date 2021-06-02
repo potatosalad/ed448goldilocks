@@ -102,7 +102,7 @@ public:
         if (strlen(s) < 25) printf("%*s",int(25-strlen(s)),"");
         fflush(stdout);
         i = j = 0;
-        ntests = NTESTS * factor;
+        ntests = static_cast<int>(NTESTS * factor);
         nsamples = NSAMPLES;
         begin = now();
         tsc_begin = rdtsc();

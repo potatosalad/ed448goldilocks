@@ -216,7 +216,7 @@ API_NS(scalar_eq) (
 static DECAF_INLINE void scalar_decode_short (
     scalar_t s,
     const unsigned char *ser,
-    unsigned int nbytes
+    size_t nbytes
 ) {
     unsigned int i,j,k=0;
     for (i=0; i<SCALAR_LIMBS; i++) {

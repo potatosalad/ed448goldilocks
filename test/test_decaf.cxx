@@ -72,8 +72,8 @@ static void print(const char *name, const Scalar &x) {
 
 static void hexprint(const char *name, const SecureBuffer &buffer) {
     printf("  %s = 0x", name);
-    for (int i=buffer.size()-1; i>=0; i--) {
-        printf("%02x", buffer[i]);
+    for (auto i = buffer.rbegin(); i!= buffer.rend(); ++i) {
+        printf("%02x", *i);
     }
     printf("\n");
 }

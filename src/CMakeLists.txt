@@ -36,12 +36,18 @@ set(TARGET_ARCH_DIR_P25519 arch_32)
 # availables: arch_32, arch_arm_32, arch_neon, arch_ref64, arch_x86_64
 set(TARGET_ARCH_DIR_P448 arch_32)
 
-if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64") # x86_64
+
+if(MSVC)# On MSVC Windows, Processor is always AMD64 on both platforms (x86/x64)
+	set(MSVC_ARCH ${CMAKE_CXX_COMPILER_ARCHITECTURE_ID})# ${MSVC_ARCH} MATCHES "X64"
+else()
+	set(MSVC_ARCH ${CMAKE_SYSTEM_PROCESSOR})# just to have a value
+endif()
+if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64" AND NOT MSVC)#Decaf doesn't support 64bits on MSVC yet
 	message("Target architecture is x86_64")
 	set(TARGET_ARCH_DIR arch_x86_64)
 	set(TARGET_ARCH_DIR_P25519 arch_x86_64)
 	set(TARGET_ARCH_DIR_P448 arch_x86_64)
-elseif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arch64") # shall be arm64 bits, stick to ref64
+elseif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arch64") # shall be arm64 bits, stick to ref64.
 	message("Target architecture is 64 bits general purpose(arm64 shall use this)")
 	set(TARGET_ARCH_DIR arch_ref64)
 	set(TARGET_ARCH_DIR_P25519 arch_ref64)

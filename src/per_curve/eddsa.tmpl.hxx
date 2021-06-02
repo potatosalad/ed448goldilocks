@@ -130,7 +130,7 @@ public:
             message.size(),
             0,
             context.data(),
-            context.size()
+            static_cast<uint8_t>(context.size())
         );
         return out;
     }
@@ -147,7 +147,7 @@ public:
             ((const CRTP*)this)->keypair_,
             (const decaf_ed$(gf_shortname)_prehash_ctx_s*)ph.wrapped,
             ph.context_.data(),
-            ph.context_.size()
+            static_cast<uint8_t>(ph.context_.size())
         );
         return out;
     }
@@ -266,7 +266,7 @@ public:
             message.size(),
             0,
             context.data(),
-            context.size()
+            static_cast<uint8_t>(context.size())
         );
     }
     
@@ -319,7 +319,7 @@ public:
             ((const CRTP*)this)->pub_.data(),
             (const decaf_ed$(gf_shortname)_prehash_ctx_s*)ph.wrapped,
             ph.context_.data(),
-            ph.context_.size()
+            static_cast<uint8_t>(ph.context_.size())
         )) {
             throw CryptoException();
         }

@@ -178,16 +178,22 @@ public:
     
     /** Block from std::string */
     inline Block(const std::string &s) : data_(
-    #if __cplusplus >= 201103L
-        ((unsigned char *)&(s)[0])
-    #else
+#if __cplusplus >= 201103L
         ((unsigned char *)(s.data()))
-    #endif
-    ), size_(s.size()), zero_on_destroy_(false) {}
+#else
+        ((unsigned char *)&(s)[0])
+#endif
+        ), size_(s.size()), zero_on_destroy_(false) {}
     
     /** Block from std::vector */
     template<class alloc> inline Block(const std::vector<unsigned char,alloc> &s)
-        : data_(((unsigned char *)&(s)[0])), size_(s.size()), zero_on_destroy_(false) {}
+        : data_(
+#if __cplusplus >= 201103L
+        ((unsigned char *)(s.data()))
+#else
+        ((unsigned char *)&(s)[0])
+#endif
+	    ), size_(s.size()), zero_on_destroy_(false) {}
 
     /** Get const data */
     inline const unsigned char *data() const DECAF_NOEXCEPT { return data_; }
@@ -405,7 +411,11 @@ protected:
     inline void clear() DECAF_NOEXCEPT {
         if (is_mine) {
             really_bzero(ours.mine, T::size());
+#ifdef _MSC_VER
+            _aligned_free(ours.mine);
+#else
             free(ours.mine);
+#endif // _MSC_VER
             ours.yours = T::default_value();
             is_mine = false;
         }
@@ -482,6 +492,11 @@ template<typename T, size_t alignment>
 void SanitizingAllocator<T,alignment>::deallocate(T* p, size_t size) DECAF_NOEXCEPT {
     if (p==NULL) return;
     really_bzero(reinterpret_cast<void*>(p), size);
+#ifdef _MSC_VER
+    if (alignment)
+        _aligned_free(reinterpret_cast<void*>(p));
+    else
+#endif // _MSC_VER
     free(reinterpret_cast<void*>(p));
 }
 
