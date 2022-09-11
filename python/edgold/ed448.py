@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2017 John-Mark Gurney.
+# Copyright 2017, 2022 John-Mark Gurney.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,10 +33,11 @@ of signing due to the complexity of integration w/ the library, and
 that things should be more simple to use.'''
 
 __author__ = 'John-Mark Gurney'
-__copyright__ = 'Copyright 2017 John-Mark Gurney'''
-__license__ = 'BSD'
-__version__ = '0.1'
-__status__ = 'alpha'
+__copyright__ = 'Copyright 2017, 2022 John-Mark Gurney'''
+__license__ = 'BSD-2-Clause'
+__version__ = '1.0'
+
+__all__ = [ 'EDDSA448', 'generate' ]
 
 import array
 import os
@@ -94,13 +95,7 @@ def _makeba(s):
 	return r
 
 def _makestr(a):
-	# XXX - because python3 sucks, and unittest doesn't offer
-	# ability to silence stupid warnings, hide the tostring
-	# DeprecationWarning.
-	with warnings.catch_warnings():
-		warnings.simplefilter('ignore')
-		return array.array('B', a).tostring()
-
+	return bytes(a)
 
 def _ed448_privkey():
 	return _makeba(os.urandom(DECAF_EDDSA_448_PRIVATE_BYTES))
