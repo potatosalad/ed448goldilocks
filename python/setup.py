@@ -6,14 +6,25 @@ from distutils.core import setup
 import os
 import sys
 
-libext = dict(darwin='.dylib').get(sys.platform, '.so')
+def libname(ver):
+	vars = dict(
+	    name='libdecaf',
+	    ver=ver,
+	)
+
+	if sys.platform == 'darwin':
+		return '%(name)s.%(ver)d.dylib' % vars
+
+	return '%(name)s.so.%(ver)d' % vars
 
 class my_build(build):
     def run(self):
         build.run(self)
         if not self.dry_run:
-            os.spawnlp(os.P_WAIT, 'sh', 'sh', '-c', 'cd .. && mkdir build && cd build && cmake .. && make')
-            self.copy_file(os.path.join('..', 'build', 'src', 'libdecaf.0' + libext), os.path.join(self.build_lib, 'edgold', 'libdecaf.so'))
+            os.spawnlp(os.P_WAIT, 'sh', 'sh', '-c',
+                'cd .. && mkdir build && cd build && cmake .. && make')
+            self.copy_file(os.path.join('..', 'build', 'src', libname(0)),
+                os.path.join(self.build_lib, 'edgold', 'libdecaf.so'))
 
 cmdclass = {}
 cmdclass['build'] = my_build
