@@ -6,6 +6,16 @@ The easiest way to install is to run the command:
 pip install 'git+https://git.code.sf.net/p/ed448goldilocks/code#egg=edgold&subdirectory=python'
 ```
 
+After installation, the tests can be run:
+```
+python -m unittest edgold.ed448
+```
+
+This helps ensure that the correct architecture was detected when
+compiling, and that the code works.  It include a couple test vectors
+from the RFC, along with verifying that the code can properly interact
+with the library.
+
 Usage
 -----
 
