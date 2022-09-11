@@ -42,7 +42,7 @@ if(MSVC)# On MSVC Windows, Processor is always AMD64 on both platforms (x86/x64)
 else()
 	set(MSVC_ARCH ${CMAKE_SYSTEM_PROCESSOR})# just to have a value
 endif()
-if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64" AND NOT MSVC)#Decaf doesn't support 64bits on MSVC yet
+if((${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64" OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "amd64") AND NOT MSVC)#Decaf doesn't support 64bits on MSVC yet
 	message("Target architecture is x86_64")
 	set(TARGET_ARCH_DIR arch_x86_64)
 	set(TARGET_ARCH_DIR_P25519 arch_x86_64)
