@@ -49,6 +49,12 @@ $("DECAF_API_VIS extern const uint8_t * const DECAF_ED" + gf_shortname + "_NO_CO
 #define DECAF_EDDSA_NON_KEYPAIR_API_IS_DEPRECATED 1
 #endif
 
+#ifndef DECAF_EDDSA_STRONGLY_BINDING
+/** Flag to decaf_ed$(gf_shortname)_verify_with_flags: if set, use the
+ * strongly-binding verification conditions */
+#define DECAF_EDDSA_STRONGLY_BINDING (1<<0)
+#endif
+
 /** @cond internal */
 /** @brief Scheduled EdDSA keypair */
 typedef struct decaf_eddsa_$(gf_shortname)_keypair_s {
@@ -224,7 +230,7 @@ void DECAF_API_VIS decaf_ed$(gf_shortname)_prehash_init (
 /**
  * @brief EdDSA signature verification.
  *
- * Uses the standard (i.e. less-strict) verification formula.
+ * Uses the standard (i.e. less-strict) verification formula.  RFC 8032 compliant.
  *
  * @param [in] signature The signature.
  * @param [in] pubkey The public key.
@@ -250,7 +256,72 @@ decaf_error_t DECAF_API_VIS decaf_ed$(gf_shortname)_verify (
 ) __attribute__((nonnull(1,2))) DECAF_NOINLINE;
 
 /**
- * @brief EdDSA signature verification.
+ * @brief EdDSA signature verification, with flags.
+ *
+ * Uses the less-strict verification formula.
+ * 
+ * If flags & DECAF_EDDSA_STRONGLY_BINDING, then forbid small-order keys.  This makes the verification
+ * operation strongly binding, but not RFC 8032 compliant.  See https://eprint.iacr.org/2020/1244.pdf.
+ *
+ * @param [in] signature The signature.
+ * @param [in] pubkey The public key.
+ * @param [in] message The message to verify.
+ * @param [in] message_len The length of the message.
+ * @param [in] prehashed Nonzero if the message is actually the hash of something you want to verify.
+ * @param [in] context A "context" for this signature of up to 255 bytes.
+ * @param [in] context_len Length of the context.
+ * @param [in] flags Flags for the operation
+ *
+ * @warning For Ed25519, it is unsafe to use the same key for both prehashed and non-prehashed
+ * messages, at least without some very careful protocol-level disambiguation.  For Ed448 it is
+ * safe.  The C++ wrapper is designed to make it harder to screw this up, but this C code gives
+ * you no seat belt.
+ */
+decaf_error_t DECAF_API_VIS decaf_ed$(gf_shortname)_verify_with_flags (
+    const uint8_t signature[DECAF_EDDSA_$(gf_shortname)_SIGNATURE_BYTES],
+    const uint8_t pubkey[DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES],
+    const uint8_t *message,
+    size_t message_len,
+    uint8_t prehashed,
+    const uint8_t *context,
+    uint8_t context_len,
+    uint32_t flags
+) __attribute__((nonnull(1,2))) DECAF_NOINLINE;
+
+/**
+ * @brief EdDSA signature verification; strongly binding version.
+ *
+ * Uses the less-strict verification formula.
+ * 
+ * Forbid small-order keys.  This makes the verification operation strongly binding, but not
+ * RFC 8032 compliant.  See https://eprint.iacr.org/2020/1244.pdf.
+ *
+ * @param [in] signature The signature.
+ * @param [in] pubkey The public key.
+ * @param [in] message The message to verify.
+ * @param [in] message_len The length of the message.
+ * @param [in] prehashed Nonzero if the message is actually the hash of something you want to verify.
+ * @param [in] context A "context" for this signature of up to 255 bytes.
+ * @param [in] context_len Length of the context.
+ * @param [in] flags Flags for the operation.
+ *
+ * @warning For Ed25519, it is unsafe to use the same key for both prehashed and non-prehashed
+ * messages, at least without some very careful protocol-level disambiguation.  For Ed448 it is
+ * safe.  The C++ wrapper is designed to make it harder to screw this up, but this C code gives
+ * you no seat belt.
+ */
+decaf_error_t DECAF_API_VIS decaf_ed$(gf_shortname)_verify_strong (
+    const uint8_t signature[DECAF_EDDSA_$(gf_shortname)_SIGNATURE_BYTES],
+    const uint8_t pubkey[DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES],
+    const uint8_t *message,
+    size_t message_len,
+    uint8_t prehashed,
+    const uint8_t *context,
+    uint8_t context_len
+) __attribute__((nonnull(1,2))) DECAF_NOINLINE;
+
+/**
+ * @brief EdDSA signature verification, prehashed version.
  *
  * Uses the standard (i.e. less-strict) verification formula.
  *
@@ -271,6 +342,62 @@ decaf_error_t DECAF_API_VIS decaf_ed$(gf_shortname)_verify_prehash (
     const decaf_ed$(gf_shortname)_prehash_ctx_t hash,
     const uint8_t *context,
     uint8_t context_len
+) __attribute__((nonnull(1,2))) DECAF_NOINLINE;
+
+/**
+ * @brief EdDSA signature verification, strongly binding, prehashed version.
+ *
+ * Uses the standard (i.e. less-strict) verification formula.
+ * 
+ * Forbid small-order keys.  This makes the verification operation strongly binding, but not
+ * RFC 8032 compliant.  See https://eprint.iacr.org/2020/1244.pdf.
+ *
+ * @param [in] signature The signature.
+ * @param [in] pubkey The public key.
+ * @param [in] hash The hash of the message.  This object will not be modified by the call.
+ * @param [in] context A "context" for this signature of up to 255 bytes.  Must be the same as what was used for the prehash.
+ * @param [in] context_len Length of the context.
+ *
+ * @warning For Ed25519, it is unsafe to use the same key for both prehashed and non-prehashed
+ * messages, at least without some very careful protocol-level disambiguation.  For Ed448 it is
+ * safe.  The C++ wrapper is designed to make it harder to screw this up, but this C code gives
+ * you no seat belt.
+ */
+decaf_error_t DECAF_API_VIS decaf_ed$(gf_shortname)_verify_prehash_strong (
+    const uint8_t signature[DECAF_EDDSA_$(gf_shortname)_SIGNATURE_BYTES],
+    const uint8_t pubkey[DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES],
+    const decaf_ed$(gf_shortname)_prehash_ctx_t hash,
+    const uint8_t *context,
+    uint8_t context_len
+) __attribute__((nonnull(1,2))) DECAF_NOINLINE;
+
+/**
+ * @brief EdDSA signature verification with flags, prehashed version.
+ *
+ * Uses the less-strict verification formula.
+ * 
+ * If flags & DECAF_EDDSA_STRONGLY_BINDING, then forbid small-order keys.  This makes the verification
+ * operation strongly binding, but not RFC 8032 compliant.  See https://eprint.iacr.org/2020/1244.pdf.
+ *
+ * @param [in] signature The signature.
+ * @param [in] pubkey The public key.
+ * @param [in] hash The hash of the message.  This object will not be modified by the call.
+ * @param [in] context A "context" for this signature of up to 255 bytes.  Must be the same as what was used for the prehash.
+ * @param [in] context_len Length of the context.
+ * @param [in] flags Flags for the operation.
+ *
+ * @warning For Ed25519, it is unsafe to use the same key for both prehashed and non-prehashed
+ * messages, at least without some very careful protocol-level disambiguation.  For Ed448 it is
+ * safe.  The C++ wrapper is designed to make it harder to screw this up, but this C code gives
+ * you no seat belt.
+ */
+decaf_error_t DECAF_API_VIS decaf_ed$(gf_shortname)_verify_prehash_with_flags (
+    const uint8_t signature[DECAF_EDDSA_$(gf_shortname)_SIGNATURE_BYTES],
+    const uint8_t pubkey[DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES],
+    const decaf_ed$(gf_shortname)_prehash_ctx_t hash,
+    const uint8_t *context,
+    uint8_t context_len,
+    uint32_t flags
 ) __attribute__((nonnull(1,2))) DECAF_NOINLINE;
 
 /**

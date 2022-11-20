@@ -321,21 +321,26 @@ void decaf_ed$(gf_shortname)_keypair_sign_prehash (
     decaf_bzero(hash_output,sizeof(hash_output));
 }
 
-decaf_error_t decaf_ed$(gf_shortname)_verify (
+decaf_error_t decaf_ed$(gf_shortname)_verify_with_flags (
     const uint8_t signature[DECAF_EDDSA_$(gf_shortname)_SIGNATURE_BYTES],
     const uint8_t pubkey[DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES],
     const uint8_t *message,
     size_t message_len,
     uint8_t prehashed,
     const uint8_t *context,
-    uint8_t context_len
+    uint8_t context_len,
+    uint32_t flags
 ) { 
     API_NS(point_t) pk_point, r_point;
     decaf_error_t error = API_NS(point_decode_like_eddsa_and_mul_by_ratio)(pk_point,pubkey);
     if (DECAF_SUCCESS != error) { return error; }
+    if ((flags & DECAF_EDDSA_STRONGLY_BINDING)
+        && API_NS(point_eq(pk_point,$(c_ns)_point_identity))) {
+        return DECAF_FAILURE;
+    }
     
     error = API_NS(point_decode_like_eddsa_and_mul_by_ratio)(r_point,signature);
-    if (DECAF_SUCCESS != error) { return error; }
+    if (DECAF_SUCCESS != error) { return error; } 
     
     API_NS(scalar_t) challenge_scalar;
     {
@@ -374,7 +379,6 @@ decaf_error_t decaf_ed$(gf_shortname)_verify (
         API_NS(scalar_add)(response_scalar,response_scalar,response_scalar);
     }
     
-    
     /* pk_point = -c(x(P)) + (cx + k)G = kG */
     API_NS(base_double_scalarmul_non_secret)(
         pk_point,
@@ -385,6 +389,51 @@ decaf_error_t decaf_ed$(gf_shortname)_verify (
     return decaf_succeed_if(API_NS(point_eq(pk_point,r_point)));
 }
 
+decaf_error_t decaf_ed$(gf_shortname)_verify (
+    const uint8_t signature[DECAF_EDDSA_$(gf_shortname)_SIGNATURE_BYTES],
+    const uint8_t pubkey[DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES],
+    const uint8_t *message,
+    size_t message_len,
+    uint8_t prehashed,
+    const uint8_t *context,
+    uint8_t context_len
+) {
+    return decaf_ed$(gf_shortname)_verify_with_flags(signature,pubkey,
+        message,message_len,prehashed,context,context_len,0);
+}
+
+decaf_error_t decaf_ed$(gf_shortname)_verify_strong (
+    const uint8_t signature[DECAF_EDDSA_$(gf_shortname)_SIGNATURE_BYTES],
+    const uint8_t pubkey[DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES],
+    const uint8_t *message,
+    size_t message_len,
+    uint8_t prehashed,
+    const uint8_t *context,
+    uint8_t context_len
+) {
+    return decaf_ed$(gf_shortname)_verify_with_flags(signature,pubkey,
+        message,message_len,prehashed,context,context_len,DECAF_EDDSA_STRONGLY_BINDING);
+}
+
+decaf_error_t decaf_ed$(gf_shortname)_verify_prehash_with_flags (
+    const uint8_t signature[DECAF_EDDSA_$(gf_shortname)_SIGNATURE_BYTES],
+    const uint8_t pubkey[DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES],
+    const decaf_ed$(gf_shortname)_prehash_ctx_t hash,
+    const uint8_t *context,
+    uint8_t context_len,
+    uint32_t flags
+) {
+    uint8_t hash_output[EDDSA_PREHASH_BYTES];
+    {
+        decaf_ed$(gf_shortname)_prehash_ctx_t hash_too;
+        memcpy(hash_too,hash,sizeof(hash_too));
+        hash_final(hash_too,hash_output,sizeof(hash_output));
+        hash_destroy(hash_too);
+    }
+
+    return decaf_ed$(gf_shortname)_verify_with_flags(signature,pubkey,
+        hash_output,sizeof(hash_output),1,context,context_len,flags);
+}
 
 decaf_error_t decaf_ed$(gf_shortname)_verify_prehash (
     const uint8_t signature[DECAF_EDDSA_$(gf_shortname)_SIGNATURE_BYTES],
@@ -393,17 +442,17 @@ decaf_error_t decaf_ed$(gf_shortname)_verify_prehash (
     const uint8_t *context,
     uint8_t context_len
 ) {
-    decaf_error_t ret;
-    
-    uint8_t hash_output[EDDSA_PREHASH_BYTES];
-    {
-        decaf_ed$(gf_shortname)_prehash_ctx_t hash_too;
-        memcpy(hash_too,hash,sizeof(hash_too));
-        hash_final(hash_too,hash_output,sizeof(hash_output));
-        hash_destroy(hash_too);
-    }
-    
-    ret = decaf_ed$(gf_shortname)_verify(signature,pubkey,hash_output,sizeof(hash_output),1,context,context_len);
-    
-    return ret;
+    return decaf_ed$(gf_shortname)_verify_prehash_with_flags(signature,pubkey,
+        hash,context,context_len,0);
+}
+
+decaf_error_t decaf_ed$(gf_shortname)_verify_prehash_strong (
+    const uint8_t signature[DECAF_EDDSA_$(gf_shortname)_SIGNATURE_BYTES],
+    const uint8_t pubkey[DECAF_EDDSA_$(gf_shortname)_PUBLIC_BYTES],
+    const decaf_ed$(gf_shortname)_prehash_ctx_t hash,
+    const uint8_t *context,
+    uint8_t context_len
+) {
+    return decaf_ed$(gf_shortname)_verify_prehash_with_flags(signature,pubkey,
+        hash,context,context_len,DECAF_EDDSA_STRONGLY_BINDING);
 }

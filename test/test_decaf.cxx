@@ -587,6 +587,9 @@ static void test_eddsa() {
     }
     typename Group::Scalar more_than_size = 1;
     for (int i=0; i<lg_scalar; i++) more_than_size *= 2;
+    FixedArrayBuffer<EdDSA<Group>::PublicKey::SER_BYTES> zero_pubkey;
+    FixedArrayBuffer<EdDSA<Group>::PublicKey::SIG_BYTES> zero_sig;
+    typename EdDSA<Group>::PublicKey pub0(zero_pubkey);
     
     for (int i=0; i<NTESTS && test.passing_now; i++) {
         typename EdDSA<Group>::PrivateKey priv(rng);
@@ -599,6 +602,18 @@ static void test_eddsa() {
         rng.read(context);
         
         SecureBuffer sig = priv.sign(message,context); 
+
+
+        bool accept_weak   = pub0.verify_noexcept(zero_sig,message,EdDSA<Group>::NO_CONTEXT(), false);
+        bool accept_strong = pub0.verify_noexcept(zero_sig,message,EdDSA<Group>::NO_CONTEXT(), true);
+        if (accept_strong) {
+            test.fail();
+            printf("    Strong-accepted sig with zero pubkey on try %d\n", i);
+        }
+        if (!accept_weak) {
+            test.fail();
+            printf("    Didn't weak-accept sig with zero pubkey on try %d\n", i);
+        }
         
         try {
             pub.verify(sig,message,context); 

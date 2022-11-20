@@ -253,20 +253,22 @@ public:
     inline decaf_error_t DECAF_WARN_UNUSED verify_noexcept (
         const FixedBlock<DECAF_EDDSA_$(gf_shortname)_SIGNATURE_BYTES> &sig,
         const Block &message,
-        const Block &context = NO_CONTEXT()
+        const Block &context = NO_CONTEXT(),
+        bool strong = false
     ) const /*DECAF_NOEXCEPT*/ {
         if (context.size() > 255) {
             return DECAF_FAILURE;
         }
         
-        return decaf_ed$(gf_shortname)_verify (
+        return decaf_ed$(gf_shortname)_verify_with_flags (
             sig.data(),
             ((const CRTP*)this)->pub_.data(),
             message.data(),
             message.size(),
             0,
             context.data(),
-            static_cast<uint8_t>(context.size())
+            static_cast<uint8_t>(context.size()),
+            strong ? DECAF_EDDSA_STRONGLY_BINDING : 0
         );
     }
     
@@ -280,13 +282,14 @@ public:
     inline void verify (
         const FixedBlock<DECAF_EDDSA_$(gf_shortname)_SIGNATURE_BYTES> &sig,
         const Block &message,
-        const Block &context = NO_CONTEXT()
+        const Block &context = NO_CONTEXT(),
+        bool strong = false
     ) const /*throw(LengthException,CryptoException)*/ {
         if (context.size() > 255) {
             throw LengthException();
         }
         
-        if (DECAF_SUCCESS != verify_noexcept( sig, message, context )) {
+        if (DECAF_SUCCESS != verify_noexcept( sig, message, context, strong )) {
             throw CryptoException();
         }
     }
@@ -298,28 +301,32 @@ public:
     /** Verify that a signature is valid for a given prehashed message, given the context. */
     inline decaf_error_t DECAF_WARN_UNUSED verify_prehashed_noexcept (
         const FixedBlock<DECAF_EDDSA_$(gf_shortname)_SIGNATURE_BYTES> &sig,
-        const Prehash &ph
+        const Prehash &ph,
+        bool strong = false
     ) const /*DECAF_NOEXCEPT*/ {
-        return decaf_ed$(gf_shortname)_verify_prehash (
+        return decaf_ed$(gf_shortname)_verify_prehash_with_flags (
             sig.data(),
             ((const CRTP*)this)->pub_.data(),
             (const decaf_ed$(gf_shortname)_prehash_ctx_s*)ph.wrapped,
             ph.context_.data(),
-            ph.context_.size()
+            ph.context_.size(),
+            strong ? DECAF_EDDSA_STRONGLY_BINDING : 0
         );
     }
 
     /** Verify that a signature is valid for a given prehashed message, given the context. */
     inline void verify_prehashed (
         const FixedBlock<DECAF_EDDSA_$(gf_shortname)_SIGNATURE_BYTES> &sig,
-        const Prehash &ph
+        const Prehash &ph,
+        bool strong = false
     ) const /*throw(CryptoException)*/ {
-        if (DECAF_SUCCESS != decaf_ed$(gf_shortname)_verify_prehash (
+        if (DECAF_SUCCESS != decaf_ed$(gf_shortname)_verify_prehash_with_flags (
             sig.data(),
             ((const CRTP*)this)->pub_.data(),
             (const decaf_ed$(gf_shortname)_prehash_ctx_s*)ph.wrapped,
             ph.context_.data(),
-            static_cast<uint8_t>(ph.context_.size())
+            static_cast<uint8_t>(ph.context_.size()),
+            strong ? DECAF_EDDSA_STRONGLY_BINDING : 0
         )) {
             throw CryptoException();
         }
