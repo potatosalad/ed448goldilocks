@@ -1,4 +1,5 @@
 import binascii
+class TodoException(Exception): pass
 class InvalidEncodingException(Exception): pass
 class NotOnCurveException(Exception): pass
 class SpecException(Exception): pass
@@ -94,6 +95,12 @@ class QuotientEdwardsPoint(object):
         X,Y = other
         return x*Y == X*y or (self.cofactor==8 and -self.a*x*X == y*Y)
     def __ne__(self,other): return not (self==other)
+
+    def _eqRepr(self,other):
+        """Non-Ristretto equality"""
+        x,y = self
+        X,Y = other
+        return (x,y) == (X,Y)
     
     def __mul__(self,exp):
         exp = int(exp)
@@ -118,6 +125,30 @@ class QuotientEdwardsPoint(object):
             if self.a ==  1: return self.__class__(-self.y, self.x)
         else:
             return self.__class__(-self.x, -self.y)
+        
+    def _torque_non_ristretto(self):
+        """
+        Not a Ristretto method.
+        Apply cofactor group, not necessarily keeping the point even
+        """
+        if self.cofactor == 8:
+            raise TodoException()
+        else:
+            if self.a ==  1: return self.__class__(-self.y, self.x)
+            if self.a == -1:
+                sqrtD = sqrt(self.d)
+                return self.__class__(1/(self.y * sqrtD), -1/(self.x * sqrtD))
+
+    def _repr_is_in_subgroup_non_ristretto(self):
+        """
+        Not really a Ristretto method, because it does care about cofactor information
+        unlike everything else, but I'm adding it here because there is infrastructure.
+
+        Return True if self's underlying Ed448 point representation is in the prime-order
+        subgroup.
+        """
+        Q = self.primeOrder * self
+        return (Q.x,Q.y) == (0,1)
     
     def doubleAndEncodeSpec(self):
         return (self+self).encode()
@@ -629,6 +660,7 @@ class Ed25519Point(RistrettoPoint):
     magic = isqrt(a*d-1)
     cofactor = 8
     encLen = 32
+    primeOrder = 2^252 + 0x14def9dea2f79cd65812631a5cf5d3ed
     
     @classmethod
     def base(cls):
@@ -645,6 +677,7 @@ class NegEd25519Point(RistrettoPoint):
     magic = isqrt(a*d-1)
     cofactor = 8
     encLen = 32
+    primeOrder = Ed25519Point.primeOrder
     
     @classmethod
     def base(cls):
@@ -662,7 +695,8 @@ class IsoEd448Point(RistrettoPoint):
     magic = isqrt(a*d-1)
     cofactor = 4
     encLen = 56
-    
+    primeOrder = 2^446 - 0x8335dc163bb124b65129c96fde933d8d723a70aadc873d6d54a7bb0d
+
     @classmethod
     def base(cls):
         return cls(  # RFC has it wrong
@@ -679,6 +713,7 @@ class Ed448RistrettoPoint(RistrettoPoint):
     magic = isqrt(a*d-1)
     cofactor = 4
     encLen = 56
+    primeOrder = IsoEd448Point.primeOrder
     
     @classmethod
     def base(cls):
@@ -694,6 +729,7 @@ class TwistedEd448GoldilocksPoint(Decaf_1_1_Point):
     cofactor = 4
     encLen = 56
     isoMagic = IsoEd448Point.magic
+    primeOrder = IsoEd448Point.primeOrder
 
     @classmethod
     def base(cls):
@@ -707,12 +743,46 @@ class Ed448GoldilocksPoint(Decaf_1_1_Point):
     cofactor = 4
     encLen = 56
     isoMagic = IsoEd448Point.magic
+    primeOrder = IsoEd448Point.primeOrder
     
     @classmethod
     def base(cls):
         return 2*cls(
  224580040295924300187604334099896036246789641632564134246125461686950415467406032909029192869357953282578032075146446173674602635247710, 298819210078481492676017930443930673437544040154080242095928241372331506189835876003536878655418784733982303233503462500531545062832660
         )
+
+    @optimized_version_of("_repr_is_in_subgroup_non_ristretto")
+    def _repr_is_in_subgroup_opt(self):
+        """
+        Not really a Ristretto method, because it does care about cofactor information
+        unlike everything else, but I'm adding it here because there is infrastructure.
+
+        Return True if self's underlying Ed448 point representation is in the prime-order
+        subgroup.
+
+        The method is written in such a way that it can easily by integrated into point
+        decompression
+        """
+        x,y = self
+        if y==-1: return False
+        a,d = self.a,self.d
+        assert a == 1 # may be assuming this below?
+
+        den = d*y^2 - a
+        if not den.is_square(): return False # can't be zero, because d/a isn't square
+        isden = isqrt(den*(d-a))
+
+        if True:
+            # Rest of the decoding algorithm
+            num = y^2 - 1
+            if not num.is_square(): return False # can be zero
+            snum  =  sqrt(num*(d-a))
+            X = snum * isden
+            assert x==X or x==-X # i.e. x is the output of decoding
+
+        return ((1 - isden*den) * (y+1)).is_square()
+
+        # TODO: or possibly expand magic since we already have another magic?
 
 class IsoEd25519Point(Decaf_1_1_Point):
     # TODO: twisted iso too!
@@ -727,7 +797,8 @@ class IsoEd25519Point(Decaf_1_1_Point):
     encLen = 32
     isoMagic = Ed25519Point.magic
     isoA = Ed25519Point.a
-    
+    primeOrder = Ed25519Point.primeOrder
+
     @classmethod
     def base(cls):
         return cls.decodeSpec(Ed25519Point.base().encode())
@@ -857,23 +928,66 @@ def testDoubleAndEncode(cls,n):
         u = cls.elligator(r1) + cls.elligator(r2)
         assert u.doubleAndEncode() == u.torque().doubleAndEncode()
 
-testDoubleAndEncode(Ed25519Point,100)
-testDoubleAndEncode(NegEd25519Point,100)
-testDoubleAndEncode(IsoEd25519Point,100)
-testDoubleAndEncode(IsoEd448Point,100)
-testDoubleAndEncode(Ed448RistrettoPoint,100)
-testDoubleAndEncode(TwistedEd448GoldilocksPoint,100)
-#test(Ed25519Point,100)
-#test(NegEd25519Point,100)
-#test(IsoEd25519Point,100)
-#test(IsoEd448Point,100)
-#test(TwistedEd448GoldilocksPoint,100)
-#test(Ed448GoldilocksPoint,100)
-#testElligator(Ed25519Point,100)
-#testElligator(NegEd25519Point,100)
-#testElligator(IsoEd25519Point,100)
-#testElligator(IsoEd448Point,100)
-#testElligator(Ed448GoldilocksPoint,100)
-#testElligator(TwistedEd448GoldilocksPoint,100)
-gangtest([IsoEd448Point,TwistedEd448GoldilocksPoint,Ed448GoldilocksPoint],100)
-gangtest([Ed25519Point,IsoEd25519Point],100)
+def testTorque(cls,n):
+    print( "Testing _torque_non_ristretto on %s" % cls.__name__)
+
+    for i in range(n):
+        try:
+            if i == 0:
+                # identity point
+                P = cls()
+            else:
+                # random point
+                r1 = randombytes(cls.encLen)
+                r2 = randombytes(cls.encLen)
+                P = cls.cofactor*(cls.elligator(r1) + cls.elligator(r2))
+            
+            assert P.torque()._eqRepr(P._torque_non_ristretto()._torque_non_ristretto())
+        except ZeroDivisionError:
+            assert i==0
+
+def testSubgroupMembership(cls,n):
+    print( "Testing _repr_is_in_subgroup_opt on %s" % cls.__name__)
+
+    for i in range(n):
+        try:
+            if i == 0:
+                # identity point
+                P = cls()
+            else:
+                # random point
+                r1 = randombytes(cls.encLen)
+                r2 = randombytes(cls.encLen)
+                P = cls.cofactor*(cls.elligator(r1) + cls.elligator(r2))
+            
+            for i in range(cls.cofactor):
+                assert P._repr_is_in_subgroup_opt() == (i==0)
+                P = P._torque_non_ristretto()
+        except ZeroDivisionError:
+            assert i==0
+
+testTorque(Ed448GoldilocksPoint,100)
+testTorque(IsoEd448Point,100)
+testTorque(TwistedEd448GoldilocksPoint,100)
+testSubgroupMembership(Ed448GoldilocksPoint,100)
+
+# testDoubleAndEncode(Ed25519Point,100)
+# testDoubleAndEncode(NegEd25519Point,100)
+# testDoubleAndEncode(IsoEd25519Point,100)
+# testDoubleAndEncode(IsoEd448Point,100)
+# testDoubleAndEncode(Ed448RistrettoPoint,100)
+# testDoubleAndEncode(TwistedEd448GoldilocksPoint,100)
+# test(Ed25519Point,100)
+# test(NegEd25519Point,100)
+# test(IsoEd25519Point,100)
+# test(IsoEd448Point,100)
+# test(TwistedEd448GoldilocksPoint,100)
+# test(Ed448GoldilocksPoint,100)
+# testElligator(Ed25519Point,100)
+# testElligator(NegEd25519Point,100)
+# testElligator(IsoEd25519Point,100)
+# testElligator(IsoEd448Point,100)
+# testElligator(Ed448GoldilocksPoint,100)
+# testElligator(TwistedEd448GoldilocksPoint,100)
+# gangtest([IsoEd448Point,TwistedEd448GoldilocksPoint,Ed448GoldilocksPoint],100)
+# gangtest([Ed25519Point,IsoEd25519Point],100)
