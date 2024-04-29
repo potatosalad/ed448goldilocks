@@ -687,6 +687,7 @@ class NegEd25519Point(RistrettoPoint):
         return cls(x,y)
 
 class IsoEd448Point(RistrettoPoint):
+    # Note well: this is *not* the Decaf448 encoding: it's the Ristretto255 math applied to the IsoEd448 curve.
     F = GF(2^448-2^224-1)
     d = F(39082/39081)
     a = F(1)
@@ -705,6 +706,7 @@ class IsoEd448Point(RistrettoPoint):
         )
 
 class Ed448RistrettoPoint(RistrettoPoint):
+    # Note well: this is *not* the Decaf448 encoding: it's the Ristretto255 math applied to the Ed448 curve.
     F = GF(2^448-2^224-1)
     d = F(-39081)
     a = F(1)
@@ -736,6 +738,7 @@ class TwistedEd448GoldilocksPoint(Decaf_1_1_Point):
         return cls.decodeSpec(Ed448GoldilocksPoint.base().encodeSpec())
 
 class Ed448GoldilocksPoint(Decaf_1_1_Point):
+    # Note well: this *is* the Decaf448 encoding
     F = GF(2^448-2^224-1)
     d = F(-39081)
     a = F(1)
@@ -747,6 +750,13 @@ class Ed448GoldilocksPoint(Decaf_1_1_Point):
     
     @classmethod
     def base(cls):
+        # Note well: this is the "Ed448Goldilocks" base point from the original paper, but it's
+        # **double** the RFC7748 "edwards448" base point.
+        #
+        # Note well: the encoding of this point is 0x66 0x66 ... 0x33 0x33, just as the spec says.
+        # However, when you encode it in SAGE, it will output b'ffff...3333'.  Why?  Because it outputs
+        # a bytestring, and SAGE displays that in ASCII.  And it happens that in ASCII,
+        # 0x66 is "f" and 0x33 is "3"
         return 2*cls(
  224580040295924300187604334099896036246789641632564134246125461686950415467406032909029192869357953282578032075146446173674602635247710, 298819210078481492676017930443930673437544040154080242095928241372331506189835876003536878655418784733982303233503462500531545062832660
         )
@@ -781,8 +791,6 @@ class Ed448GoldilocksPoint(Decaf_1_1_Point):
             assert x==X or x==-X # i.e. x is the output of decoding
 
         return ((1 - isden*den) * (y+1)).is_square()
-
-        # TODO: or possibly expand magic since we already have another magic?
 
 class IsoEd25519Point(Decaf_1_1_Point):
     # TODO: twisted iso too!
