@@ -1451,7 +1451,11 @@ static int recode_wnaf (
             uint32_t pos = __builtin_ctz((uint32_t)current), odd = (uint32_t)current >> pos;
             int32_t delta = odd & mask;
             if (odd & 1<<(table_bits+1)) delta -= (1<<(table_bits+1));
-            current -= delta << pos;
+	    if (delta >= 0) {
+	            current -= delta << pos;
+            } else {
+		    current += (-delta) << pos;
+	    }
             control[position].power = pos + 16*(w-1);
             control[position].addend = delta;
             position--;

@@ -134,7 +134,12 @@ decaf_error_t API_NS(scalar_invert) (
             w-=2;
         }
         
-        residue = (residue<<1) | ((w>>(i%WBITS))&1);
+	if (i<0) {
+		residue = (residue<<1) | ((w<<(-i%WBITS))&1);
+	} else {
+		residue = (residue<<1) | ((w>>(i%WBITS))&1);
+	}
+
         if (residue>>SCALAR_WINDOW_BITS != 0) {
             assert(trailing == 0);
             trailing = residue;
