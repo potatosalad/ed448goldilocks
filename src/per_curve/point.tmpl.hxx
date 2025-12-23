@@ -658,7 +658,12 @@ public:
     /** @cond internal */
     friend class OwnedOrUnowned<Precomputed,Precomputed_U>;
     static inline size_t size() DECAF_NOEXCEPT { return $(c_ns)_sizeof_precomputed_s; }
-    static inline size_t alignment() DECAF_NOEXCEPT { return $(c_ns)_alignof_precomputed_s; }
+    static inline size_t alignment() DECAF_NOEXCEPT {
+      if ($(c_ns)_alignof_precomputed_s < sizeof(void*)) {
+        return sizeof(void*);
+      }
+      return $(c_ns)_alignof_precomputed_s;
+    }
     static inline const Precomputed_U * default_value() DECAF_NOEXCEPT { return $(c_ns)_precomputed_base; }
     /** @endcond */
 };
