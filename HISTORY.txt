@@ -1,5 +1,7 @@
-September 20, 2026:
-    Fix a git snafu.  Release v1.0.4a.
+September 21, 2026:
+    Fix a git snafu.  Tagged as v1.0.4a.  But on second thought (and thoughts
+    by Johan Pascal) maybe this version number will confuse version control
+    tools.  Let's call it v1.0.5.
     
 September 20, 2026:
     Fix an RFC compliance mistake reported by Ryan Culpepper.
