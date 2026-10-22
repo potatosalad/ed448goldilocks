@@ -42,7 +42,7 @@ if((${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64" OR ${CMAKE_SYSTEM_PROCESSOR} MATC
 	set(TARGET_ARCH_DIR arch_x86_64)
 	set(TARGET_ARCH_DIR_P25519 arch_x86_64)
 	set(TARGET_ARCH_DIR_P448 arch_x86_64)
-elseif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arch64") # shall be arm64 bits, stick to ref64.
+elseif("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "^(aarch64|arm64)$") # ARM64 uses the generic 64-bit implementation.
 	message("Target architecture is 64 bits general purpose(arm64 shall use this)")
 	set(TARGET_ARCH_DIR arch_ref64)
 	set(TARGET_ARCH_DIR_P25519 arch_ref64)
